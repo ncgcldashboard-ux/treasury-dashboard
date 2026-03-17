@@ -206,7 +206,7 @@ def find_latest_pkrv_file_url() -> Optional[str]:
         try:
             resp = requests.get(url, timeout=REQ_TIMEOUT, headers={"User-Agent": USER_AGENT})
             resp.raise_for_status()
-            soup = BeautifulSoup(resp.text, "html.parser")
+            soup = BeautifulSoup(html, "html.parser")
             for a in soup.find_all("a", href=True):
                 href = a.get("href", "").strip()
                 label = clean_string(a.get_text(" ", strip=True))
