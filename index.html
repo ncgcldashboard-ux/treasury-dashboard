@@ -5,116 +5,121 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Fund Dashboard — WoW Positions</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
-  --ink: #0d1b2a; --paper: #f5f0e8; --cream: #ede8dc;
-  --white: #ffffff; --border: #c8bfaf; --muted: #78909c;
-  --green: #2b8c3a; --green2: #1a6b28;
-  --blue: #1e6091; --amber: #e65100; --red: #b71c1c;
-  --gold: #f9a825; --slate: #37474f;
+  --ink:#0d1b2a; --paper:#f5f0e8; --cream:#ede8dc;
+  --white:#ffffff; --border:#c8bfaf; --muted:#78909c;
+  --green:#2b8c3a; --green2:#1a6b28;
+  --blue:#1e6091; --amber:#e65100; --red:#b71c1c;
+  --gold:#f9a825; --slate:#37474f;
 }
-*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--paper); color: var(--ink); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 0.82rem; line-height: 1.5; }
-.wrap { max-width: 1280px; margin: 0 auto; padding: clamp(14px,4vw,32px); }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;font-size:0.82rem;line-height:1.5;}
+.wrap{max-width:1280px;margin:0 auto;padding:clamp(14px,4vw,32px);}
 
 /* HEADER */
-.header { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; padding-bottom: 18px; border-bottom: 3px solid var(--green); margin-bottom: 24px; }
-.header h1 { font-size: clamp(1.1rem,3vw,1.65rem); font-weight: 800; letter-spacing: -0.5px; color: var(--ink); }
-.header p { font-size: 0.72rem; color: var(--muted); margin-top: 2px; letter-spacing: 0.3px; }
-.header-badge { background: var(--green); color: #fff; padding: 6px 16px; border-radius: 4px; font-weight: 700; font-size: 0.72rem; text-align: center; letter-spacing: 0.5px; white-space: nowrap; }
-.header-badge span { display: block; font-size: 1.1rem; font-weight: 800; font-family: 'Courier New', monospace; }
+.header{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding-bottom:18px;border-bottom:3px solid var(--green);margin-bottom:24px;}
+.header h1{font-size:clamp(1.1rem,3vw,1.65rem);font-weight:800;letter-spacing:-0.5px;color:var(--ink);}
+.header p{font-size:0.72rem;color:var(--muted);margin-top:2px;letter-spacing:0.3px;}
+.header-badge{background:var(--green);color:#fff;padding:6px 16px;border-radius:4px;font-weight:700;font-size:0.72rem;text-align:center;letter-spacing:0.5px;white-space:nowrap;}
+.header-badge span{display:block;font-size:1.1rem;font-weight:800;font-family:'Courier New',monospace;}
 
 /* CONFIG */
-.config-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-.config-bar input { flex: 1; min-width: 280px; background: var(--white); border: 1px solid var(--border); border-radius: 4px; color: var(--ink); font-family: inherit; font-size: 0.78rem; padding: 7px 12px; outline: none; transition: border-color .2s; }
-.config-bar input:focus { border-color: var(--green); }
-.config-bar input::placeholder { color: var(--muted); }
-.config-bar button { padding: 7px 16px; border-radius: 4px; font-family: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all .2s; white-space: nowrap; }
-.btn-p { background: var(--green); color: #fff; border-color: var(--green); }
-.btn-p:hover { background: var(--green2); }
-.btn-g { background: var(--cream); color: var(--muted); border-color: var(--border); }
-.btn-g:hover { background: var(--border); color: var(--ink); }
-.status-bar { font-size: 0.72rem; color: var(--muted); margin-bottom: 16px; min-height: 16px; }
-.status-bar.ok { color: var(--green); font-weight: 600; }
-.status-bar.err { color: var(--red); font-weight: 600; }
+.config-box{background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:16px 20px;margin-bottom:20px;}
+.config-box label{display:block;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:6px;}
+.config-row{display:flex;gap:8px;flex-wrap:wrap;}
+.config-row input{flex:1;min-width:280px;background:var(--white);border:1px solid var(--border);border-radius:4px;color:var(--ink);font-family:'Courier New',monospace;font-size:0.78rem;padding:7px 12px;outline:none;transition:border-color .2s;}
+.config-row input:focus{border-color:var(--green);}
+.config-row input::placeholder{color:var(--muted);font-family:'Segoe UI',sans-serif;}
+.config-row button{padding:7px 18px;border-radius:4px;font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .2s;white-space:nowrap;}
+.btn-p{background:var(--green);color:#fff;border-color:var(--green);}
+.btn-p:hover{background:var(--green2);}
+.btn-g{background:var(--white);color:var(--muted);border-color:var(--border);}
+.btn-g:hover{background:var(--border);color:var(--ink);}
+.config-hint{font-size:0.65rem;color:var(--muted);margin-top:8px;line-height:1.6;}
+.config-hint code{background:var(--white);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-family:'Courier New',monospace;font-size:0.72rem;color:var(--ink);}
+
+/* STATUS */
+.status-bar{font-size:0.72rem;color:var(--muted);margin-bottom:16px;min-height:18px;display:flex;align-items:center;gap:8px;}
+.status-bar.ok{color:var(--green);font-weight:600;}
+.status-bar.err{color:var(--red);font-weight:600;}
+.spinner{width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;display:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
 
 /* KPI STRIP */
-.kpi-strip { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; background: var(--cream); border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; margin-bottom: 24px; }
-.kpi { text-align: center; }
-.kpi-val { font-size: clamp(1.1rem,2.4vw,1.85rem); font-weight: 800; color: var(--green); letter-spacing: -0.5px; font-family: 'Courier New', monospace; }
-.kpi-val.blue { color: var(--blue); }
-.kpi-val.amber { color: var(--amber); }
-.kpi-val.slate { color: var(--slate); }
-.kpi-val.red { color: var(--red); }
-.kpi-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-top: 2px; }
-.kpi-sub { font-size: 0.6rem; color: var(--border); margin-top: 1px; }
+.kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:16px 20px;margin-bottom:24px;}
+.kpi{text-align:center;}
+.kpi-val{font-size:clamp(1.1rem,2.4vw,1.85rem);font-weight:800;color:var(--green);letter-spacing:-0.5px;font-family:'Courier New',monospace;}
+.kpi-val.blue{color:var(--blue);}.kpi-val.amber{color:var(--amber);}.kpi-val.slate{color:var(--slate);}.kpi-val.red{color:var(--red);}
+.kpi-label{font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:600;margin-top:2px;}
+.kpi-sub{font-size:0.6rem;color:var(--border);margin-top:1px;}
 
 /* TABS */
-.tabs { display: flex; gap: 6px; border-bottom: 2px solid var(--border); margin-bottom: 20px; overflow-x: auto; padding-bottom: 2px; }
-.tab-btn { background: none; border: none; padding: 8px 16px; font-family: inherit; font-size: 0.78rem; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: color .15s; }
-.tab-btn:hover { color: var(--ink); }
-.tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
-.tab-panel { display: none; }
-.tab-panel.active { display: block; }
+.tabs{display:flex;gap:6px;border-bottom:2px solid var(--border);margin-bottom:20px;overflow-x:auto;padding-bottom:2px;}
+.tab-btn{background:none;border:none;padding:8px 16px;font-family:inherit;font-size:0.78rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .15s;}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green);}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
 
 /* GRIDS */
-.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
 
 /* CARDS */
-.card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 18px; margin-bottom: 16px; }
-.card-title { font-size: 0.82rem; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
-.card-sub { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
-.ch { height: 250px; } .ch-short { height: 190px; }
+.card{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:18px;margin-bottom:16px;}
+.card-title{font-size:0.82rem;font-weight:700;color:var(--ink);margin-bottom:2px;}
+.card-sub{font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;}
+.ch{height:250px;}.ch-short{height:190px;}
 
 /* INSIGHTS */
-.insights { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 16px; }
-.insight { background: var(--cream); border-left: 4px solid var(--green); border-radius: 4px; padding: 14px 16px; }
-.insight-n { font-size: 1.35rem; font-weight: 800; color: var(--green); font-family: 'Courier New', monospace; }
-.insight-d { font-size: 0.72rem; color: var(--ink); margin-top: 3px; line-height: 1.4; }
-.insight.amber { border-left-color: var(--amber); } .insight.amber .insight-n { color: var(--amber); }
-.insight.blue  { border-left-color: var(--blue);  } .insight.blue  .insight-n { color: var(--blue);  }
-.insight.red   { border-left-color: var(--red);   } .insight.red   .insight-n { color: var(--red);   }
+.insights{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.insight{background:var(--cream);border-left:4px solid var(--green);border-radius:4px;padding:14px 16px;}
+.insight-n{font-size:1.35rem;font-weight:800;color:var(--green);font-family:'Courier New',monospace;}
+.insight-d{font-size:0.72rem;color:var(--ink);margin-top:3px;line-height:1.4;}
+.insight.amber{border-left-color:var(--amber);}.insight.amber .insight-n{color:var(--amber);}
+.insight.blue{border-left-color:var(--blue);}.insight.blue .insight-n{color:var(--blue);}
+.insight.red{border-left-color:var(--red);}.insight.red .insight-n{color:var(--red);}
 
 /* SECTION LABEL */
-.section-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 20px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+.section-label{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:20px 0 10px;border-bottom:1px solid var(--border);padding-bottom:6px;}
 
 /* TABLE */
-.tbl-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; min-width: 580px; }
-thead th { background: var(--ink); color: #fff; padding: 9px 12px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; text-align: left; }
-thead th.r { text-align: right; }
-tbody tr { border-bottom: 1px solid var(--cream); }
-tbody tr:hover { background: var(--cream); }
-tbody td { padding: 8px 12px; font-size: 0.78rem; vertical-align: middle; }
-tbody td.mono { font-family: 'Courier New', monospace; font-weight: 700; text-align: right; }
-tbody td.r { text-align: right; }
-tbody td.muted { color: var(--muted); font-size: 0.72rem; }
-tfoot tr { border-top: 2px solid var(--ink); }
-tfoot td { padding: 9px 12px; font-size: 0.78rem; font-weight: 700; background: var(--cream); }
-tfoot td.mono { font-family: 'Courier New', monospace; text-align: right; }
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;min-width:580px;}
+thead th{background:var(--ink);color:#fff;padding:9px 12px;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;text-align:left;}
+thead th.r{text-align:right;}
+tbody tr{border-bottom:1px solid var(--cream);}
+tbody tr:hover{background:var(--cream);}
+tbody td{padding:8px 12px;font-size:0.78rem;vertical-align:middle;}
+tbody td.mono{font-family:'Courier New',monospace;font-weight:700;text-align:right;}
+tbody td.r{text-align:right;}
+tbody td.muted{color:var(--muted);font-size:0.72rem;}
+tfoot tr{border-top:2px solid var(--ink);}
+tfoot td{padding:9px 12px;font-size:0.78rem;font-weight:700;background:var(--cream);}
+tfoot td.mono{font-family:'Courier New',monospace;text-align:right;}
 
 /* PILLS */
-.pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.4px; white-space: nowrap; }
-.pill-mtb   { background: #e3f2fd; color: #1e6091; }
-.pill-fund  { background: #e8f5e9; color: #1a6b28; }
-.pill-bank  { background: #fff3e0; color: #e65100; }
-.pill-coi   { background: #fce4ec; color: #880e4f; }
-.pill-sukuk { background: #e0f7fa; color: #006064; }
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.62rem;font-weight:700;letter-spacing:0.4px;white-space:nowrap;}
+.pill-mtb{background:#e3f2fd;color:#1e6091;}
+.pill-fund{background:#e8f5e9;color:#1a6b28;}
+.pill-bank{background:#fff3e0;color:#e65100;}
+.pill-coi{background:#fce4ec;color:#880e4f;}
+.pill-sukuk{background:#e0f7fa;color:#006064;}
 
-/* BENCHMARK ROW */
-.bench-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 16px; }
-.bench-card { background: var(--cream); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; text-align: center; }
-.bench-val { font-size: 1.45rem; font-weight: 800; font-family: 'Courier New', monospace; margin: 4px 0 2px; }
-.bench-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; }
+/* BENCHMARK */
+.bench-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.bench-card{background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:14px 16px;text-align:center;}
+.bench-val{font-size:1.45rem;font-weight:800;font-family:'Courier New',monospace;margin:4px 0 2px;}
+.bench-label{font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:600;}
 
 /* FOOTER */
-.footer { display: grid; grid-template-columns: 1fr auto auto; gap: 16px; align-items: center; padding-top: 18px; border-top: 1px solid var(--border); margin-top: 24px; font-size: 0.65rem; color: var(--muted); }
-.footer-brand { color: var(--green); font-weight: 700; }
+.footer{display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:center;padding-top:18px;border-top:1px solid var(--border);margin-top:24px;font-size:0.65rem;color:var(--muted);}
+.footer-brand{color:var(--green);font-weight:700;}
 
 /* RESPONSIVE */
-@media(max-width:900px){ .g2,.g3{ grid-template-columns:1fr; } .kpi-strip{ grid-template-columns:repeat(3,1fr); } .insights{ grid-template-columns:1fr; } .bench-row{ grid-template-columns:1fr 1fr; } }
-@media(max-width:540px){ .kpi-strip{ grid-template-columns:repeat(2,1fr); } .bench-row{ grid-template-columns:1fr; } .footer{ grid-template-columns:1fr; } }
+@media(max-width:900px){.g2,.g3{grid-template-columns:1fr;}.kpi-strip{grid-template-columns:repeat(3,1fr);}.insights{grid-template-columns:1fr;}.bench-row{grid-template-columns:1fr 1fr;}}
+@media(max-width:540px){.kpi-strip{grid-template-columns:repeat(2,1fr);}.bench-row{grid-template-columns:1fr;}.footer{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -132,41 +137,32 @@ tfoot td.mono { font-family: 'Courier New', monospace; text-align: right; }
   </div>
 </div>
 
-<!-- CONFIG -->
-<div class="config-bar">
-  <input id="apiUrl" type="text" placeholder="Paste Apps Script Web App URL to connect Google Sheets…"/>
-  <button class="btn-p" onclick="fetchData()">Connect</button>
-  <button class="btn-g" onclick="fetchData()">↻ Refresh</button>
+<!-- CONFIG BOX -->
+<div class="config-box">
+  <label>Excel File URL (raw GitHub link to your .xlsx file)</label>
+  <div class="config-row">
+    <input id="xlsxUrl" type="text" placeholder="https://raw.githubusercontent.com/your-username/your-repo/main/data.xlsx"/>
+    <button class="btn-p" onclick="loadXlsx()">Load Data</button>
+    <button class="btn-g" onclick="loadXlsx()">↻ Refresh</button>
+  </div>
+  <div class="config-hint">
+    How to get this URL: Open your GitHub repo → click your <code>.xlsx</code> file → click <strong>Raw</strong> → copy the URL from your browser.
+    It will look like: <code>https://raw.githubusercontent.com/username/repo/main/filename.xlsx</code>
+  </div>
 </div>
-<div class="status-bar" id="statusEl">Paste your Apps Script URL above and click Connect to load live data.</div>
+
+<div class="status-bar" id="statusEl">
+  <div class="spinner" id="spinner"></div>
+  <span id="statusTxt">Enter your raw GitHub xlsx URL above and click Load Data.</span>
+</div>
 
 <!-- KPI STRIP -->
 <div class="kpi-strip">
-  <div class="kpi">
-    <div class="kpi-val" id="k-aum">—</div>
-    <div class="kpi-label">AUM (Current Week)</div>
-    <div class="kpi-sub" id="k-aum-sub">Total portfolio value</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-val blue" id="k-gl">—</div>
-    <div class="kpi-label">Weekly Gain / Loss</div>
-    <div class="kpi-sub">vs prior week</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-val" id="k-yield">—</div>
-    <div class="kpi-label">Portfolio Yield</div>
-    <div class="kpi-sub">Weekly rate</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-val slate" id="k-nav">—</div>
-    <div class="kpi-label">NAV (Current)</div>
-    <div class="kpi-sub" id="k-nav-sub">per unit</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-val amber" id="k-count">—</div>
-    <div class="kpi-label">Instruments</div>
-    <div class="kpi-sub">Active positions</div>
-  </div>
+  <div class="kpi"><div class="kpi-val" id="k-aum">—</div><div class="kpi-label">AUM (Current Week)</div><div class="kpi-sub" id="k-aum-sub">—</div></div>
+  <div class="kpi"><div class="kpi-val blue" id="k-gl">—</div><div class="kpi-label">Weekly Gain / Loss</div><div class="kpi-sub">vs prior week</div></div>
+  <div class="kpi"><div class="kpi-val" id="k-yield">—</div><div class="kpi-label">Portfolio Yield</div><div class="kpi-sub">Weekly rate</div></div>
+  <div class="kpi"><div class="kpi-val slate" id="k-nav">—</div><div class="kpi-label">NAV (Current)</div><div class="kpi-sub" id="k-nav-sub">per unit</div></div>
+  <div class="kpi"><div class="kpi-val amber" id="k-count">—</div><div class="kpi-label">Instruments</div><div class="kpi-sub">Active positions</div></div>
 </div>
 
 <!-- TABS -->
@@ -193,30 +189,13 @@ tfoot td.mono { font-family: 'Courier New', monospace; text-align: right; }
       <div class="insight-d">Alpha vs benchmark of <strong id="ov-bench">—</strong>. 3-Month KIBOR: <span id="ov-3mk">—</span>.</div>
     </div>
   </div>
-
   <div class="g2">
-    <div class="card">
-      <div class="card-title">Portfolio Concentration by Instrument</div>
-      <div class="card-sub">% of total AUM — all positions</div>
-      <div class="ch"><canvas id="c-conc"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Weekly Yield by Instrument</div>
-      <div class="card-sub">Rate (%) per position</div>
-      <div class="ch"><canvas id="c-yield"></canvas></div>
-    </div>
+    <div class="card"><div class="card-title">Portfolio Concentration by Instrument</div><div class="card-sub">% of total AUM — all positions</div><div class="ch"><canvas id="c-conc"></canvas></div></div>
+    <div class="card"><div class="card-title">Weekly Yield by Instrument</div><div class="card-sub">Rate (%) per position</div><div class="ch"><canvas id="c-yield"></canvas></div></div>
   </div>
   <div class="g2">
-    <div class="card">
-      <div class="card-title">Current Week vs Past Week Value</div>
-      <div class="card-sub">Top positions by value · PKR millions</div>
-      <div class="ch-short"><canvas id="c-wow"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Weekly Gain / Loss per Instrument</div>
-      <div class="card-sub">PKR thousands — green positive, red negative</div>
-      <div class="ch-short"><canvas id="c-gl"></canvas></div>
-    </div>
+    <div class="card"><div class="card-title">Current Week vs Past Week Value</div><div class="card-sub">Top positions · PKR millions</div><div class="ch-short"><canvas id="c-wow"></canvas></div></div>
+    <div class="card"><div class="card-title">Weekly Gain / Loss per Instrument</div><div class="card-sub">PKR thousands — green positive, red negative</div><div class="ch-short"><canvas id="c-gl"></canvas></div></div>
   </div>
 </div>
 
@@ -225,34 +204,19 @@ tfoot td.mono { font-family: 'Courier New', monospace; text-align: right; }
   <div class="section-label">Week-on-Week Position Summary · All Instruments</div>
   <div class="tbl-wrap">
     <table>
-      <thead>
-        <tr>
-          <th>#</th><th>Instrument</th><th>Type</th>
-          <th class="r">Cost of Placement</th>
-          <th class="r">Past Week</th>
-          <th class="r">Current Week</th>
-          <th class="r">Gain / Loss</th>
-          <th class="r">W. Yield</th>
-          <th class="r">Concentration</th>
-          <th class="r">Rem. Days</th>
-        </tr>
-      </thead>
+      <thead><tr>
+        <th>#</th><th>Instrument</th><th>Type</th>
+        <th class="r">Cost of Placement</th><th class="r">Past Week</th><th class="r">Current Week</th>
+        <th class="r">Gain / Loss</th><th class="r">W. Yield</th><th class="r">Concentration</th><th class="r">Rem. Days</th>
+      </tr></thead>
       <tbody id="pos-tbody"></tbody>
       <tfoot id="pos-tfoot"></tfoot>
     </table>
   </div>
-
   <div class="section-label" style="margin-top:24px;">Liabilities</div>
   <div class="tbl-wrap">
     <table>
-      <thead>
-        <tr>
-          <th>Instrument</th>
-          <th class="r">Current Value</th>
-          <th class="r">Cost Rate</th>
-          <th>Placement Date</th><th>Maturity Date</th>
-        </tr>
-      </thead>
+      <thead><tr><th>Instrument</th><th class="r">Current Value</th><th class="r">Cost Rate</th><th>Placement Date</th><th>Maturity Date</th></tr></thead>
       <tbody id="liab-tbody"></tbody>
     </table>
   </div>
@@ -263,34 +227,18 @@ tfoot td.mono { font-family: 'Courier New', monospace; text-align: right; }
   <div class="section-label">Return Rate Summary · All Instruments</div>
   <div class="tbl-wrap">
     <table>
-      <thead>
-        <tr>
-          <th>Instrument</th>
-          <th class="r">Weekly Yield</th>
-          <th class="r">Tax Adj. (1D)</th>
-          <th class="r">Gross Exp.</th>
-          <th class="r">Tax Adj. (30D)</th>
-          <th class="r">1-Day Return</th>
-          <th class="r">15-Day Return</th>
-          <th class="r">30-Day Return</th>
-          <th class="r">90-Day Return</th>
-        </tr>
-      </thead>
+      <thead><tr>
+        <th>Instrument</th><th class="r">Weekly Yield</th><th class="r">Tax Adj. (1D)</th>
+        <th class="r">Gross Exp.</th><th class="r">Tax Adj. (30D)</th>
+        <th class="r">1-Day Return</th><th class="r">15-Day Return</th><th class="r">30-Day Return</th><th class="r">90-Day Return</th>
+      </tr></thead>
       <tbody id="rate-tbody"></tbody>
       <tfoot id="rate-tfoot"></tfoot>
     </table>
   </div>
   <div class="g2" style="margin-top:16px;">
-    <div class="card">
-      <div class="card-title">1-Day vs 30-Day vs 90-Day Returns</div>
-      <div class="card-sub">By instrument — % rate</div>
-      <div class="ch"><canvas id="c-returns"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Tax-Adjusted Rate (1-Day)</div>
-      <div class="card-sub">% annualised · all instruments</div>
-      <div class="ch"><canvas id="c-taxadj"></canvas></div>
-    </div>
+    <div class="card"><div class="card-title">1-Day vs 30-Day vs 90-Day Returns</div><div class="card-sub">By instrument — % rate</div><div class="ch"><canvas id="c-returns"></canvas></div></div>
+    <div class="card"><div class="card-title">Tax-Adjusted Rate (1-Day)</div><div class="card-sub">% annualised · all instruments</div><div class="ch"><canvas id="c-taxadj"></canvas></div></div>
   </div>
 </div>
 
@@ -298,54 +246,24 @@ tfoot td.mono { font-family: 'Courier New', monospace; text-align: right; }
 <div id="tab-fund" class="tab-panel">
   <div class="section-label">NAV &amp; Units</div>
   <div class="g3">
-    <div class="card" style="text-align:center;">
-      <div class="card-sub" style="margin-bottom:8px;">NAV — Past Week</div>
-      <div style="font-size:2rem;font-weight:800;font-family:'Courier New',monospace;color:var(--slate)" id="fm-navprev">—</div>
-    </div>
-    <div class="card" style="text-align:center;border-top:3px solid var(--green);">
-      <div class="card-sub" style="margin-bottom:8px;">NAV — Current Week</div>
-      <div style="font-size:2rem;font-weight:800;font-family:'Courier New',monospace;color:var(--green)" id="fm-navcur">—</div>
-      <div style="font-size:0.72rem;color:var(--muted);margin-top:4px;" id="fm-navwow">—</div>
-    </div>
-    <div class="card" style="text-align:center;">
-      <div class="card-sub" style="margin-bottom:8px;">NAV Units Outstanding</div>
-      <div style="font-size:2rem;font-weight:800;font-family:'Courier New',monospace;color:var(--blue)" id="fm-units">—</div>
-    </div>
+    <div class="card" style="text-align:center;"><div class="card-sub" style="margin-bottom:8px;">NAV — Past Week</div><div style="font-size:2rem;font-weight:800;font-family:'Courier New',monospace;color:var(--slate)" id="fm-navprev">—</div></div>
+    <div class="card" style="text-align:center;border-top:3px solid var(--green);"><div class="card-sub" style="margin-bottom:8px;">NAV — Current Week</div><div style="font-size:2rem;font-weight:800;font-family:'Courier New',monospace;color:var(--green)" id="fm-navcur">—</div><div style="font-size:0.72rem;color:var(--muted);margin-top:4px;" id="fm-navwow">—</div></div>
+    <div class="card" style="text-align:center;"><div class="card-sub" style="margin-bottom:8px;">NAV Units Outstanding</div><div style="font-size:2rem;font-weight:800;font-family:'Courier New',monospace;color:var(--blue)" id="fm-units">—</div></div>
   </div>
-
   <div class="section-label">Benchmark &amp; Alpha</div>
   <div class="bench-row">
-    <div class="bench-card">
-      <div class="bench-label">Benchmark Return</div>
-      <div class="bench-val" style="color:var(--slate)" id="fm-bench">—</div>
-    </div>
-    <div class="bench-card">
-      <div class="bench-label">Alpha vs Benchmark</div>
-      <div class="bench-val" id="fm-alpha">—</div>
-      <div style="font-size:0.65rem;color:var(--muted);">portfolio yield minus benchmark</div>
-    </div>
-    <div class="bench-card">
-      <div class="bench-label">3M KIBOR</div>
-      <div class="bench-val" style="color:var(--blue)" id="fm-3mk">—</div>
-    </div>
+    <div class="bench-card"><div class="bench-label">Benchmark Return</div><div class="bench-val" style="color:var(--slate)" id="fm-bench">—</div></div>
+    <div class="bench-card"><div class="bench-label">Alpha vs Benchmark</div><div class="bench-val" id="fm-alpha">—</div><div style="font-size:0.65rem;color:var(--muted);">portfolio yield minus benchmark</div></div>
+    <div class="bench-card"><div class="bench-label">3M KIBOR</div><div class="bench-val" style="color:var(--blue)" id="fm-3mk">—</div></div>
   </div>
-
   <div class="section-label">Risk Metrics</div>
   <div class="tbl-wrap">
     <table>
-      <thead>
-        <tr>
-          <th>Instrument</th>
-          <th class="r">Concentration</th>
-          <th class="r">PVBP</th>
-          <th class="r">Mod. Duration</th>
-          <th class="r">Convexity</th>
-          <th class="r">Tenor</th>
-          <th class="r">Dirty Price</th>
-          <th class="r">Days to Mat.</th>
-          <th class="r">Rem. Days</th>
-        </tr>
-      </thead>
+      <thead><tr>
+        <th>Instrument</th><th class="r">Concentration</th><th class="r">PVBP</th>
+        <th class="r">Mod. Duration</th><th class="r">Convexity</th><th class="r">Tenor</th>
+        <th class="r">Dirty Price</th><th class="r">Days to Mat.</th><th class="r">Rem. Days</th>
+      </tr></thead>
       <tbody id="risk-tbody"></tbody>
       <tfoot id="risk-tfoot"></tfoot>
     </table>
@@ -355,40 +273,30 @@ tfoot td.mono { font-family: 'Courier New', monospace; text-align: right; }
 <!-- FOOTER -->
 <div class="footer">
   <div><strong>Fund Operations Dashboard</strong> · WoW Positions · As at <span id="footerDate">—</span> · Confidential — Internal Use Only</div>
-  <div>Source: Google Sheets — Live via Apps Script</div>
+  <div>Source: GitHub-hosted Excel file</div>
   <div class="footer-brand" id="footerTs">—</div>
 </div>
 
-</div>
+</div><!-- /wrap -->
+
 <script>
+// ── HELPERS ───────────────────────────────────────────────────
 const $=id=>document.getElementById(id);
-const parsePKR=s=>{if(s==null||s==='')return NaN;return parseFloat(String(s).replace(/[,\s%]/g,''));};
+const parsePKR=s=>{if(s==null||s==='')return NaN;const n=parseFloat(String(s).replace(/[,\s%]/g,''));return isNaN(n)?NaN:n;};
 const fmtPKR=n=>{if(isNaN(n))return'—';const a=Math.abs(n);let s;if(a>=1e9)s=(n/1e9).toFixed(2)+'B';else if(a>=1e6)s=(n/1e6).toFixed(2)+'M';else if(a>=1e3)s=(n/1e3).toFixed(1)+'K';else s=n.toFixed(0);return'PKR '+s;};
 const fmtN=n=>{if(isNaN(n))return'—';return new Intl.NumberFormat('en-PK').format(Math.round(n));};
 const fmtRaw=s=>{if(s===undefined||s===null)return'—';const t=String(s).trim();return t||'—';};
-const getRate=r=>{const s=String(r[iWY]!==undefined&&r[iWY]!==''?r[iWY]:(r[iRT]||'')).trim();return s.replace(/[^0-9.\-% ]/g,'')+(s&&!s.includes('%')&&s?'%':'');};
+const ci=(h,p)=>h.findIndex(x=>p.test(String(x)));
 
-let allSheets={},charts={},refreshTimer=null;
-let iI,iCo,iPW,iCW,iGL,i1D,i15,i30,i90,iWY,iRT,iTX,iGE,iT3,iCN,iPV,iMD,iCV,iTN,iSY,iDP,iDM,iRD,iDPL,iDMT;
+let charts={};
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+const cc=['#1a6b28','#e65100','#1e6091','#f9a825','#37474f','#b71c1c','#006064','#4527a0','#880e4f','#f57f17','#00695c','#c62828'];
+const cd={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:12,color:'#0d1b2a'}},tooltip:{backgroundColor:'rgba(13,27,42,0.92)'}}};
 
-function setStatus(m,t){$('statusEl').className='status-bar'+(t?' '+t:'');$('statusEl').textContent=m;}
-
-async function fetchData(){
-  const url=$('apiUrl').value.trim();
-  if(!url){setStatus('Please paste your Apps Script Web App URL.','err');return;}
-  setStatus('Connecting to Google Sheets…');
-  try{
-    const res=await fetch(url);if(!res.ok)throw new Error('HTTP '+res.status);
-    const json=await res.json();if(!json.ok)throw new Error('Script returned an error');
-    allSheets=json.sheets||{};
-    const names=Object.keys(allSheets);if(!names.length)throw new Error('No sheet data found');
-    const wow=names.find(n=>/wow|position/i.test(n))||names[0];
-    renderWoW(allSheets[wow].headers,allSheets[wow].rows);
-    const ts=new Date(json.updated).toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
-    $('asOfDate').textContent=ts;$('footerDate').textContent=ts;$('footerTs').textContent='Updated '+ts;
-    setStatus('Connected — '+names.length+' sheet(s) loaded · Auto-refresh in 60s','ok');
-    clearTimeout(refreshTimer);refreshTimer=setTimeout(fetchData,60000);
-  }catch(e){setStatus('Error: '+e.message+' — Ensure script is deployed with "Anyone" access.','err');}
+function setStatus(msg,type=''){
+  $('statusEl').className='status-bar'+(type?' '+type:'');
+  $('statusTxt').textContent=msg;
+  $('spinner').style.display=type==='loading'?'block':'none';
 }
 
 function switchTab(id,btn){
@@ -397,6 +305,7 @@ function switchTab(id,btn){
   $('tab-'+id).classList.add('active');btn.classList.add('active');
 }
 
+// ── INSTRUMENT HELPERS ────────────────────────────────────────
 function typePill(n){
   const l=n.toLowerCase();
   if(l.includes('mtb'))return'<span class="pill pill-mtb">MTB</span>';
@@ -419,75 +328,160 @@ function sn(n){
   if(/alfalah ghp/i.test(n))return'AGIM Fund';if(/mcb/i.test(n))return'MCB ISP';
   if(/faysal/i.test(n))return'Faysal';if(/samba/i.test(n))return'Samba';
   if(/daewoo/i.test(n))return'Daewoo';if(/coi/i.test(n))return'COI';
-  const m=n.match(/MTBs?\s*\((\w+)\)/i);if(m)return'MTB ('+m[1]+')';
+  const m=n.match(/MTBs?\s*\((\w+)\)/i);if(m)return'MTB('+m[1]+')';
   return n.length>14?n.slice(0,13)+'…':n;
 }
-function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
-const cc=['#1a6b28','#e65100','#1e6091','#f9a825','#37474f','#b71c1c','#006064','#4527a0','#880e4f','#f57f17','#00695c','#c62828'];
-const cd={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:12,color:'#0d1b2a'}},tooltip:{backgroundColor:'rgba(13,27,42,0.92)'}}};
 
-function ci(h,p){return h.findIndex(x=>p.test(String(x)));}
+// ── LOAD XLSX FROM GITHUB ─────────────────────────────────────
+async function loadXlsx(){
+  let url=$('xlsxUrl').value.trim();
+  if(!url){setStatus('Please enter the raw GitHub URL to your .xlsx file.','err');return;}
 
-function renderWoW(headers,rows){
-  iI=ci(headers,/instrument/i);iCo=ci(headers,/cost/i);
-  iPW=ci(headers,/past.?week/i);iCW=ci(headers,/current.?week/i);
-  iGL=ci(headers,/gain.?loss/i);i1D=ci(headers,/1.?day.?ret/i);
-  i15=ci(headers,/15.?day/i);i30=ci(headers,/30.?day(?!s).?ret|30.?day(?!s)/i);
-  i90=ci(headers,/90.?day/i);iWY=ci(headers,/weekly.?yield/i);
-  iRT=ci(headers,/^rate/i);iTX=ci(headers,/tax.?adj.*1.?day/i);
-  iGE=ci(headers,/gross.?exp/i);iT3=ci(headers,/tax.?adj.*30/i);
-  iCN=ci(headers,/concentration/i);iPV=ci(headers,/pvbp/i);
-  iMD=ci(headers,/modified/i);iCV=ci(headers,/convexity/i);
-  iTN=ci(headers,/^tenor/i);iSY=ci(headers,/secondary/i);
-  iDP=ci(headers,/dirty/i);iDM=ci(headers,/days.?to.?mat/i);
-  iRD=ci(headers,/remaining/i);iDPL=ci(headers,/date.?of.?place/i);
-  iDMT=ci(headers,/date.?of.?mat/i);
+  // Auto-convert normal GitHub URL to raw if needed
+  if(url.includes('github.com')&&!url.includes('raw.githubusercontent.com')){
+    url=url
+      .replace('github.com','raw.githubusercontent.com')
+      .replace('/blob/','/')
+      .replace('/raw/','/')
+  }
 
-  const positions=[],sp={};
-  rows.forEach(r=>{
-    const instr=String(r[iI]||r[1]||'').trim();
-    if(!instr)return;
-    if(/^total$/i.test(instr)){sp.total=r;return;}
-    if(/^borrowing$/i.test(instr)){sp.liab=r;return;}
-    if(/^benchmark$/i.test(instr)){sp.bench=parsePKR(r[2]||r[iCo]);return;}
-    if(/^alpha$/i.test(instr)){sp.alpha=parsePKR(r[2]||r[iCo]);return;}
-    if(/^3mk$/i.test(instr)){sp.mk=parsePKR(r[2]||r[iCo]);return;}
-    if(/^nav\s*$/i.test(instr)){sp.navR=r;return;}
-    if(/^nav.?units$/i.test(instr)){sp.unitsR=r;return;}
-    positions.push(r);
+  setStatus('Fetching Excel file from GitHub…','loading');
+  try{
+    const res=await fetch(url);
+    if(!res.ok)throw new Error('HTTP '+res.status+' — check the URL is correct and the repo is public.');
+    const buf=await res.arrayBuffer();
+    const wb=XLSX.read(buf,{type:'array',cellDates:true});
+    processWorkbook(wb);
+    const ts=new Date().toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
+    $('asOfDate').textContent=ts;$('footerDate').textContent=ts;
+    $('footerTs').textContent='Loaded '+ts;
+    setStatus('Data loaded successfully from GitHub · '+wb.SheetNames.length+' sheet(s) found: '+wb.SheetNames.join(', '),'ok');
+    localStorage.setItem('fundDashXlsxUrl',url);
+  }catch(e){
+    setStatus('Error: '+e.message,'err');
+  }
+}
+
+// ── PROCESS WORKBOOK ──────────────────────────────────────────
+function processWorkbook(wb){
+  // Find WoW Positions sheet (flexible name match)
+  const wowName=wb.SheetNames.find(n=>/wow|position/i.test(n))||wb.SheetNames[0];
+  const ws=wb.Sheets[wowName];
+
+  // Convert sheet to array of arrays (raw values)
+  const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+
+  // Find the header row — look for row containing "Instrument"
+  let headerIdx=raw.findIndex(row=>row.some(c=>String(c).toLowerCase().includes('instrument')&&String(c).toLowerCase().length<20));
+  if(headerIdx<0)headerIdx=5; // fallback to row 6 (0-indexed 5) based on known sheet structure
+
+  const headers=raw[headerIdx].map(c=>String(c).trim());
+  const dataRows=raw.slice(headerIdx+1).filter(r=>r.some(c=>c!==''&&c!==null));
+
+  // Convert to objects
+  const rows=dataRows.map(r=>{
+    const obj={};
+    headers.forEach((h,i)=>{obj[h]=r[i]??'';});
+    // Also store by index for fallback
+    obj.__raw=r;
+    return obj;
   });
 
-  const T=sp.total,L=sp.liab;
-  const bench=sp.bench??10.38,alpha=sp.alpha??-3.73,mk3=sp.mk??11.38;
-  const navP=sp.navR?(parsePKR(sp.navR[iPW>=0?iPW:3])||82.75):82.75;
-  const navC=sp.navR?(parsePKR(sp.navR[iCW>=0?iCW:4])||82.92):82.92;
-  const units=sp.unitsR?(parsePKR(sp.unitsR[iPW>=0?iPW:3])||100000000):100000000;
+  renderWoW(headers,rows,raw,headerIdx);
+}
+
+// ── MAIN RENDER ───────────────────────────────────────────────
+function renderWoW(headers,rows,raw,headerIdx){
+  const iI  =ci(headers,/instrument/i);
+  const iCo =ci(headers,/cost/i);
+  const iPW =ci(headers,/past.?week/i);
+  const iCW =ci(headers,/current.?week/i);
+  const iGL =ci(headers,/gain.?loss/i);
+  const i1D =ci(headers,/1.?day.?ret/i);
+  const i15 =ci(headers,/15.?day/i);
+  const i30 =ci(headers,/30.?day/i);
+  const i90 =ci(headers,/90.?day/i);
+  const iWY =ci(headers,/weekly.?yield/i);
+  const iRT =ci(headers,/^rate/i);
+  const iTX =ci(headers,/tax.?adj.*1.?day/i);
+  const iGE =ci(headers,/gross.?exp/i);
+  const iT3 =ci(headers,/tax.?adj.*30/i);
+  const iCN =ci(headers,/concentration/i);
+  const iPV =ci(headers,/pvbp/i);
+  const iMD =ci(headers,/modified/i);
+  const iCV =ci(headers,/convexity/i);
+  const iTN =ci(headers,/^tenor/i);
+  const iDP =ci(headers,/dirty/i);
+  const iDM =ci(headers,/days.?to.?mat/i);
+  const iRD =ci(headers,/remaining/i);
+  const iDPL=ci(headers,/date.?of.?place/i);
+  const iDMT=ci(headers,/date.?of.?mat/i);
+
+  const getR=r=>{
+    const s=String(r[headers[iWY]]!==undefined&&r[headers[iWY]]!==''?r[headers[iWY]]:(iRT>=0?r[headers[iRT]]||'':'')).trim();
+    const n=parsePKR(s);
+    if(!isNaN(n))return n.toFixed(2)+'%';
+    return s.replace(/[^0-9.\-% ]/g,'')||'—';
+  };
+
+  // Partition rows
+  const positions=[],sp={};
+  rows.forEach(r=>{
+    const instrKey=headers[iI]||headers.find(h=>/instrument/i.test(h))||headers[1];
+    const instr=String(r[instrKey]||r[headers[1]]||'').trim();
+    if(!instr)return;
+    if(/^total$/i.test(instr)){sp.T=r;return;}
+    if(/^borrowing$/i.test(instr)){sp.L=r;return;}
+    if(/^benchmark$/i.test(instr)){sp.bench=parsePKR(r[headers[iCo]]||r[headers[2]]);return;}
+    if(/^alpha$/i.test(instr)){sp.alpha=parsePKR(r[headers[iCo]]||r[headers[2]]);return;}
+    if(/^3mk$/i.test(instr)){sp.mk=parsePKR(r[headers[iCo]]||r[headers[2]]);return;}
+    if(/^nav\s*$/i.test(instr)){sp.navR=r;return;}
+    if(/^nav.?units$/i.test(instr)){sp.unitsR=r;return;}
+    positions.push({...r,__instr:instr});
+  });
+
+  const T=sp.T,L=sp.L;
+  const bench =sp.bench ??10.38;
+  const alpha =sp.alpha ??-3.73;
+  const mk3   =sp.mk    ??11.38;
+
+  // NAV — try navR row, fallback to known values
+  const navPwKey=headers[iPW],navCwKey=headers[iCW];
+  const navP=sp.navR?(parsePKR(sp.navR[navPwKey])||82.75):82.75;
+  const navC=sp.navR?(parsePKR(sp.navR[navCwKey])||82.92):82.92;
+  const units=sp.unitsR?(parsePKR(sp.unitsR[navPwKey])||100000000):100000000;
   const navWoW=((navC-navP)/navP*100);
 
-  // KPI strip
-  const tCur=T?parsePKR(T[iCW]):NaN,tGL=T?parsePKR(T[iGL]):NaN;
-  const tYld=T?String(T[iWY]||T[iRT]||'').trim():'';
+  const hdr=k=>headers[k]; // header name at index k
+
+  // ── KPI strip ──
+  const tCur=T?parsePKR(T[hdr(iCW)]):NaN;
+  const tGL =T?parsePKR(T[hdr(iGL)]):NaN;
+  const tYld=T?(String(T[hdr(iWY)]||T[hdr(iRT)]||'').replace(/[^0-9.%]/g,'')):'';;
   $('k-aum').textContent=isNaN(tCur)?'—':fmtPKR(tCur).replace('PKR ','');
-  $('k-aum-sub').textContent=isNaN(tCur)?'':fmtPKR(tCur);
+  $('k-aum-sub').textContent=fmtPKR(tCur);
   $('k-gl').textContent=isNaN(tGL)?'—':fmtPKR(tGL).replace('PKR ','');
   $('k-gl').className='kpi-val '+(isNaN(tGL)||tGL>=0?'blue':'red');
   $('k-yield').textContent=tYld||'—';
   $('k-nav').textContent=navC.toFixed(2);
   $('k-nav-sub').textContent=(navWoW>=0?'+':'')+navWoW.toFixed(2)+'% WoW';
   $('k-count').textContent=positions.length;
-  $('badgeAum').textContent=isNaN(tCur)?'—':fmtPKR(tCur);
+  $('badgeAum').textContent=fmtPKR(tCur);
 
-  // Insights
-  $('ov-nav').textContent=navC.toFixed(2);$('ov-nav-prev').textContent=navP.toFixed(2);
+  // ── Insights ──
+  $('ov-nav').textContent=navC.toFixed(2);
+  $('ov-nav-prev').textContent=navP.toFixed(2);
   $('ov-nav-wow').textContent=(navWoW>=0?'+':'')+navWoW.toFixed(2)+'%';
-  $('ov-liab').textContent=L?fmtPKR(parsePKR(L[iCW])):'—';
-  $('ov-liab-mat').textContent=L&&iDMT>=0?fmtRaw(L[iDMT]):'—';
-  $('ov-liab-rate').textContent=L?String(L[iRT]||'').trim():'—';
+  $('ov-liab').textContent=L?fmtPKR(parsePKR(L[hdr(iCW)])):'—';
+  $('ov-liab-mat').textContent=L&&iDMT>=0?fmtRaw(L[hdr(iDMT)]):'—';
+  $('ov-liab-rate').textContent=L?(String(L[hdr(iRT)]||'').trim()||'—'):'—';
   $('ov-alpha').textContent=(alpha>=0?'+':'')+alpha.toFixed(2)+'%';
-  $('ov-bench').textContent=bench.toFixed(2)+'%';$('ov-3mk').textContent=mk3.toFixed(2)+'%';
+  $('ov-bench').textContent=bench.toFixed(2)+'%';
+  $('ov-3mk').textContent=mk3.toFixed(2)+'%';
 
-  // Fund metrics tab
-  $('fm-navprev').textContent=navP.toFixed(2);$('fm-navcur').textContent=navC.toFixed(2);
+  // ── Fund metrics ──
+  $('fm-navprev').textContent=navP.toFixed(2);
+  $('fm-navcur').textContent=navC.toFixed(2);
   $('fm-navwow').textContent=(navWoW>=0?'▲ +':'▼ ')+navWoW.toFixed(2)+'% WoW';
   $('fm-navwow').style.color=navWoW>=0?'var(--green)':'var(--red)';
   $('fm-units').textContent=(units/1e6).toFixed(0)+'M';
@@ -496,12 +490,12 @@ function renderWoW(headers,rows){
   $('fm-alpha').style.color=alpha>=0?'var(--green)':'var(--red)';
   $('fm-3mk').textContent=mk3.toFixed(2)+'%';
 
-  // Positions table
+  // ── Positions table ──
   let tb='',tf='';
   positions.forEach((r,i)=>{
-    const co=parsePKR(r[iCo]),pw=parsePKR(r[iPW]),cw=parsePKR(r[iCW]),gl=parsePKR(r[iGL]);
-    const cn=parsePKR(r[iCN]),rd=iRD>=0?parsePKR(r[iRD]):NaN;
-    const instr=String(r[iI]||'').trim();
+    const instr=r.__instr;
+    const co=parsePKR(r[hdr(iCo)]),pw=parsePKR(r[hdr(iPW)]),cw=parsePKR(r[hdr(iCW)]),gl=parsePKR(r[hdr(iGL)]);
+    const cn=parsePKR(r[hdr(iCN)]),rd=iRD>=0?parsePKR(r[hdr(iRD)]):NaN;
     const gls=isNaN(gl)?'':(gl>=0?'color:var(--green);font-weight:700':'color:var(--red);font-weight:700');
     tb+=`<tr>
       <td class="muted">${i+1}</td>
@@ -511,70 +505,68 @@ function renderWoW(headers,rows){
       <td class="mono">${isNaN(pw)?'—':fmtN(pw)}</td>
       <td class="mono">${isNaN(cw)?'—':fmtN(cw)}</td>
       <td class="mono" style="${gls}">${isNaN(gl)?'—':(gl>=0?'+':'')+fmtN(gl)}</td>
-      <td class="r">${String(r[iWY]||r[iRT]||'').replace(/[^0-9.\-% ]/g,'')}</td>
+      <td class="r">${getR(r)}</td>
       <td class="r">${isNaN(cn)?'—':cn.toFixed(2)+'%'}</td>
       <td class="r">${isNaN(rd)?'—':Math.round(rd)+'d'}</td>
     </tr>`;
   });
   if(T){
-    const tc=parsePKR(T[iCW]),tg=parsePKR(T[iGL]);
+    const tc=parsePKR(T[hdr(iCW)]),tg=parsePKR(T[hdr(iGL)]);
     tf=`<tr>
       <td colspan="2"><strong>Total</strong></td><td></td>
       <td class="mono">—</td><td class="mono">—</td>
       <td class="mono"><strong>${isNaN(tc)?'—':fmtN(tc)}</strong></td>
       <td class="mono" style="${isNaN(tg)?'':(tg>=0?'color:var(--green)':'color:var(--red)')}"><strong>${isNaN(tg)?'—':(tg>=0?'+':'')+fmtN(tg)}</strong></td>
-      <td class="r"><strong>${String(T[iWY]||T[iRT]||'').replace(/[^0-9.%]/g,'')}</strong></td>
+      <td class="r"><strong>${tYld||'—'}</strong></td>
       <td class="r"><strong>100%</strong></td><td class="r">—</td>
     </tr>`;
   }
   $('pos-tbody').innerHTML=tb;$('pos-tfoot').innerHTML=tf;
 
-  // Liabilities
+  // ── Liabilities ──
   if(L){
-    const lc=parsePKR(L[iCW]);
+    const lc=parsePKR(L[hdr(iCW)]);
     $('liab-tbody').innerHTML=`<tr>
       <td style="font-weight:700">Borrowing</td>
       <td class="mono" style="color:var(--red)">${isNaN(lc)?'—':fmtN(lc)}</td>
-      <td class="r" style="color:var(--red)">${String(L[iRT]||'').trim()||'—'}</td>
-      <td>${iDPL>=0?fmtRaw(L[iDPL]):'—'}</td>
-      <td>${iDMT>=0?fmtRaw(L[iDMT]):'—'}</td>
+      <td class="r" style="color:var(--red)">${String(L[hdr(iRT)]||'').trim()||'—'}</td>
+      <td>${iDPL>=0?fmtRaw(L[hdr(iDPL)]):'—'}</td>
+      <td>${iDMT>=0?fmtRaw(L[hdr(iDMT)]):'—'}</td>
     </tr>`;
   }
 
-  // Returns table
-  let rb='',rf='';
+  // ── Return rates table ──
+  let rb='';
   positions.forEach(r=>{
-    const instr=String(r[iI]||'').trim();
-    const fR=col=>col>=0&&r[col]!==undefined&&r[col]!==''?String(r[col]).trim().replace(/[^0-9.\-% ]/g,'')||'—':'—';
+    const fR=k=>k>=0&&r[hdr(k)]!==undefined&&r[hdr(k)]!==''?String(r[hdr(k)]).replace(/[^0-9.\-% ]/g,'')||'—':'—';
     rb+=`<tr>
-      <td style="font-weight:700">${instr}</td>
-      <td class="r">${String(r[iWY]||r[iRT]||'').replace(/[^0-9.\-% ]/g,'')}</td>
+      <td style="font-weight:700">${r.__instr}</td>
+      <td class="r">${getR(r)}</td>
       <td class="r">${fR(iTX)}</td><td class="r">${fR(iGE)}</td><td class="r">${fR(iT3)}</td>
       <td class="r">${fR(i1D)}</td><td class="r">${fR(i15)}</td><td class="r">${fR(i30)}</td><td class="r">${fR(i90)}</td>
     </tr>`;
   });
-  $('rate-tbody').innerHTML=rb;$('rate-tfoot').innerHTML=rf;
+  $('rate-tbody').innerHTML=rb;
 
-  // Risk table
+  // ── Risk table ──
   let rkb='',rkf='';
   positions.forEach(r=>{
-    const instr=String(r[iI]||'').trim();
-    const cn=parsePKR(r[iCN]),md=parsePKR(r[iMD]),cv=parsePKR(r[iCV]);
-    const rd=iRD>=0?parsePKR(r[iRD]):NaN,dm=iDM>=0?parsePKR(r[iDM]):NaN;
+    const cn=parsePKR(r[hdr(iCN)]),md=parsePKR(r[hdr(iMD)]),cv=parsePKR(r[hdr(iCV)]);
+    const rd=iRD>=0?parsePKR(r[hdr(iRD)]):NaN,dm=iDM>=0?parsePKR(r[hdr(iDM)]):NaN;
     rkb+=`<tr>
-      <td style="font-weight:700">${instr}</td>
+      <td style="font-weight:700">${r.__instr}</td>
       <td class="r">${isNaN(cn)?'—':cn.toFixed(2)+'%'}</td>
-      <td class="mono">${iPV>=0&&r[iPV]?fmtN(parsePKR(r[iPV])):'—'}</td>
+      <td class="mono">${iPV>=0&&r[hdr(iPV)]?fmtN(parsePKR(r[hdr(iPV)])):'—'}</td>
       <td class="r">${isNaN(md)?'—':md.toFixed(4)}</td>
       <td class="r">${isNaN(cv)?'—':cv.toFixed(6)}</td>
-      <td class="r">${iTN>=0?fmtRaw(r[iTN]):'—'}</td>
-      <td class="mono">${iDP>=0&&r[iDP]?fmtN(parsePKR(r[iDP])):'—'}</td>
+      <td class="r">${iTN>=0?fmtRaw(r[hdr(iTN)]):'—'}</td>
+      <td class="mono">${iDP>=0&&r[hdr(iDP)]?fmtN(parsePKR(r[hdr(iDP)])):'—'}</td>
       <td class="r">${isNaN(dm)?'—':Math.round(dm)+'d'}</td>
       <td class="r">${isNaN(rd)?'—':Math.round(rd)+'d'}</td>
     </tr>`;
   });
   if(T){
-    const tcn=parsePKR(T[iCN]),tmd=parsePKR(T[iMD]),tcv=parsePKR(T[iCV]);
+    const tcn=parsePKR(T[hdr(iCN)]),tmd=parsePKR(T[hdr(iMD)]),tcv=parsePKR(T[hdr(iCV)]);
     rkf=`<tr>
       <td><strong>Portfolio Total</strong></td>
       <td class="r"><strong>${isNaN(tcn)?'100%':tcn.toFixed(2)+'%'}</strong></td>
@@ -587,59 +579,63 @@ function renderWoW(headers,rows){
   $('risk-tbody').innerHTML=rkb;$('risk-tfoot').innerHTML=rkf;
 
   // ── CHARTS ────────────────────────────────────────────────────
-  const concD=positions.map(r=>({n:sn(String(r[iI]||'')),p:parsePKR(r[iCN])||0})).filter(x=>x.p>0).sort((a,b)=>b.p-a.p);
+  const concD=positions.map(r=>({n:sn(r.__instr),p:parsePKR(r[hdr(iCN)])||0})).filter(x=>x.p>0).sort((a,b)=>b.p-a.p);
   dc('c-conc');charts['c-conc']=new Chart($('c-conc'),{
     type:'doughnut',
     data:{labels:concD.map(x=>x.n),datasets:[{data:concD.map(x=>x.p),backgroundColor:cc,borderWidth:1,borderColor:'#fff'}]},
     options:{...cd,cutout:'50%',plugins:{...cd.plugins,legend:{position:'right',labels:{font:{size:9},boxWidth:10,color:'#0d1b2a'}}},tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.parsed.toFixed(2)+'%'}}}
   });
 
-  const yD=positions.map(r=>({n:sn(String(r[iI]||'')),v:parsePKR(r[iWY])||parsePKR(r[iRT])||0}));
+  const yD=positions.map(r=>({n:sn(r.__instr),v:parsePKR(r[hdr(iWY)])||parsePKR(r[hdr(iRT)])||0}));
   dc('c-yield');charts['c-yield']=new Chart($('c-yield'),{
     type:'bar',
     data:{labels:yD.map(x=>x.n),datasets:[{data:yD.map(x=>x.v),backgroundColor:cc,borderRadius:4,borderSkipped:false}]},
     options:{...cd,plugins:{...cd.plugins,legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{beginAtZero:true,grid:{color:'#f0ebe0'},ticks:{callback:v=>v+'%'}}}}
   });
 
-  const topP=positions.slice().sort((a,b)=>parsePKR(b[iCW])-parsePKR(a[iCW])).slice(0,8);
+  const topP=positions.slice().sort((a,b)=>parsePKR(b[hdr(iCW)])-parsePKR(a[hdr(iCW)])).slice(0,8);
   dc('c-wow');charts['c-wow']=new Chart($('c-wow'),{
     type:'bar',
-    data:{labels:topP.map(r=>sn(String(r[iI]||''))),datasets:[
-      {label:'Past Week',data:topP.map(r=>Math.round(parsePKR(r[iPW])/1e6)),backgroundColor:'#c8bfaf',borderRadius:3,borderSkipped:false},
-      {label:'Current Week',data:topP.map(r=>Math.round(parsePKR(r[iCW])/1e6)),backgroundColor:'#1a6b28',borderRadius:3,borderSkipped:false}
+    data:{labels:topP.map(r=>sn(r.__instr)),datasets:[
+      {label:'Past Week',data:topP.map(r=>Math.round(parsePKR(r[hdr(iPW)])/1e6)),backgroundColor:'#c8bfaf',borderRadius:3,borderSkipped:false},
+      {label:'Current Week',data:topP.map(r=>Math.round(parsePKR(r[hdr(iCW)])/1e6)),backgroundColor:'#1a6b28',borderRadius:3,borderSkipped:false}
     ]},
     options:{...cd,scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{beginAtZero:true,grid:{color:'#f0ebe0'},ticks:{callback:v=>v+'M'}}}}
   });
 
   dc('c-gl');charts['c-gl']=new Chart($('c-gl'),{
     type:'bar',
-    data:{labels:positions.map(r=>sn(String(r[iI]||''))),datasets:[{data:positions.map(r=>{const g=parsePKR(r[iGL]);return isNaN(g)?0:Math.round(g/1e3);}),backgroundColor:positions.map(r=>{const g=parsePKR(r[iGL]);return g>=0?'#1a6b28':'#b71c1c';}),borderRadius:3,borderSkipped:false}]},
+    data:{labels:positions.map(r=>sn(r.__instr)),datasets:[{
+      data:positions.map(r=>{const g=parsePKR(r[hdr(iGL)]);return isNaN(g)?0:Math.round(g/1e3);}),
+      backgroundColor:positions.map(r=>{const g=parsePKR(r[hdr(iGL)]);return g>=0?'#1a6b28':'#b71c1c';}),
+      borderRadius:3,borderSkipped:false
+    }]},
     options:{...cd,plugins:{...cd.plugins,legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{beginAtZero:true,grid:{color:'#f0ebe0'},ticks:{callback:v=>v+'K'}}}}
   });
 
-  const retP=positions;
   dc('c-returns');charts['c-returns']=new Chart($('c-returns'),{
     type:'bar',
-    data:{labels:retP.map(r=>sn(String(r[iI]||''))),datasets:[
-      {label:'1-Day',data:retP.map(r=>parsePKR(r[i1D])||0),backgroundColor:'#1e6091',borderRadius:3,borderSkipped:false},
-      {label:'30-Day',data:retP.map(r=>parsePKR(r[i30])||0),backgroundColor:'#1a6b28',borderRadius:3,borderSkipped:false},
-      {label:'90-Day',data:retP.map(r=>parsePKR(r[i90])||0),backgroundColor:'#f9a825',borderRadius:3,borderSkipped:false}
+    data:{labels:positions.map(r=>sn(r.__instr)),datasets:[
+      {label:'1-Day', data:positions.map(r=>parsePKR(r[hdr(i1D)])||0),backgroundColor:'#1e6091',borderRadius:3,borderSkipped:false},
+      {label:'30-Day',data:positions.map(r=>parsePKR(r[hdr(i30)])||0),backgroundColor:'#1a6b28',borderRadius:3,borderSkipped:false},
+      {label:'90-Day',data:positions.map(r=>parsePKR(r[hdr(i90)])||0),backgroundColor:'#f9a825',borderRadius:3,borderSkipped:false}
     ]},
     options:{...cd,scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{beginAtZero:true,grid:{color:'#f0ebe0'},ticks:{callback:v=>v+'%'}}}}
   });
 
-  const txP=positions.filter(r=>iTX>=0&&r[iTX]);
+  const txP=positions.filter(r=>iTX>=0&&r[hdr(iTX)]);
   dc('c-taxadj');charts['c-taxadj']=new Chart($('c-taxadj'),{
     type:'bar',
-    data:{labels:txP.map(r=>sn(String(r[iI]||''))),datasets:[{data:txP.map(r=>parsePKR(r[iTX])||0),backgroundColor:cc,borderRadius:4,borderSkipped:false}]},
+    data:{labels:txP.map(r=>sn(r.__instr)),datasets:[{data:txP.map(r=>parsePKR(r[hdr(iTX)])||0),backgroundColor:cc,borderRadius:4,borderSkipped:false}]},
     options:{...cd,plugins:{...cd.plugins,legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{beginAtZero:true,grid:{color:'#f0ebe0'},ticks:{callback:v=>v+'%'}}}}
   });
 }
 
+// ── RESTORE SAVED URL ─────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',()=>{
-  const s=localStorage.getItem('fundDashUrl');
-  if(s)$('apiUrl').value=s;
-  $('apiUrl').addEventListener('change',()=>localStorage.setItem('fundDashUrl',$('apiUrl').value.trim()));
+  const s=localStorage.getItem('fundDashXlsxUrl');
+  if(s){$('xlsxUrl').value=s;}
+  $('xlsxUrl').addEventListener('change',()=>localStorage.setItem('fundDashXlsxUrl',$('xlsxUrl').value.trim()));
 });
 </script>
 </body>
