@@ -456,8 +456,9 @@ function processWorkbook(wb){
   const headers=rawWoW[headerIdx].map(c=>String(c).trim());
   const dataRows=rawWoW.slice(headerIdx+1).filter(r=>r.some(c=>c!==''&&c!==null&&c!==undefined));
 
-  // PKRV sheet — look for "PKRV History" (or any name containing pkrv)
-  const pkrvName=wb.SheetNames.find(n=>/pkrv.?hist/i.test(n))
+  // PKRV sheet — look for "PKRV rates", "PKRV History", or any sheet containing "pkrv"
+  const pkrvName=wb.SheetNames.find(n=>/pkrv.?rates?/i.test(n))
+               ||wb.SheetNames.find(n=>/pkrv.?hist/i.test(n))
                ||wb.SheetNames.find(n=>/pkrv/i.test(n))
                ||wb.SheetNames.find(n=>/yield.?curve/i.test(n));
   let pkrvData=null;
@@ -849,8 +850,8 @@ function renderWoW(headers,dataRows,pkrvData){
     allPts.sort((a,b)=>(tenorOrd[a.tenor]||99)-(tenorOrd[b.tenor]||99));
     pkrvLabels=allPts.map(p=>p.tenor);
     pkrvVals=allPts.map(p=>p.yld);
-    pkrvTitle='Secondary Yields (PKRV sheet not found — add PKRV sheet to xlsx)';
-    $('pkrv-sub').textContent='Secondary market yields from WoW sheet · Add PKRV sheet for full curve';
+    pkrvTitle='Secondary yields fallback — add a sheet named "PKRV rates" to xlsx for full curve';
+    $('pkrv-sub').textContent='Secondary yields from WoW sheet · Add "PKRV rates" sheet for full curve';
   }
   charts['c-pkrv']=new Chart($('c-pkrv'),{
     type:'line',
