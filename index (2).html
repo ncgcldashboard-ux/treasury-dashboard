@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Corporate Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+/* ── Reset & base ────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0b0f0e;
+  --surface:   #121917;
+  --card:      #1a2320;
+  --border:    rgba(255,255,255,0.07);
+  --accent:    #00e8a2;
+  --accent2:   #00b57e;
+  --text:      #e8eeec;
+  --muted:     #6b8078;
+  --danger:    #ff6b6b;
+  --warn:      #f9c74f;
+  --syne:      'Syne', sans-serif;
+  --serif:     'Instrument Serif', Georgia, serif;
+}
+
+html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--syne);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Subtle grid texture ─────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,232,162,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,232,162,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Layout ──────────────────────────────────────────────── */
+.wrapper { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+/* ── Top bar ─────────────────────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.brand { display: flex; flex-direction: column; gap: 4px; }
+
+.brand-name {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 2rem;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.brand-sub {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.topbar-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.live-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0,232,162,0.08);
+  border: 1px solid rgba(0,232,162,0.2);
+  border-radius: 100px;
+  padding: 5px 12px;
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+}
+
+.pulse {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+.ts { font-size: 11px; color: var(--muted); }
+
+/* ── Config bar ──────────────────────────────────────────── */
+.config-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.config-bar input {
+  flex: 1;
+  min-width: 260px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--syne);
+  font-size: 12px;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color .2s;
+}
+
+.config-bar input:focus { border-color: var(--accent); }
+.config-bar input::placeholder { color: var(--muted); }
+
+.config-bar select {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--syne);
+  font-size: 12px;
+  padding: 10px 14px;
+  outline: none;
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: var(--syne);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all .2s;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+.btn-primary:hover { background: #00ffb3; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border-color: var(--border);
+}
+
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Status ──────────────────────────────────────────────── */
+.status-bar {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 2rem;
+  min-height: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-bar.error { color: var(--danger); }
+.status-bar.ok { color: var(--accent); }
+
+.spinner {
+  width: 12px; height: 12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: none;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── KPI grid ────────────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 1.75rem;
+}
+
+.kpi {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+
+.kpi:hover { border-color: rgba(0,232,162,0.25); }
+
+.kpi::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity .2s;
+}
+
+.kpi:hover::after { opacity: 1; }
+
+.kpi-label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.kpi-value {
+  font-family: var(--serif);
+  font-size: 2rem;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.kpi-delta {
+  font-size: 11px;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kpi-delta.neg { color: var(--danger); }
+
+/* ── Main grid ───────────────────────────────────────────── */
+.main-grid {
+  display: grid;
+  grid-template-columns: minmax(0,1.5fr) minmax(0,1fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+/* ── Panels ──────────────────────────────────────────────── */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.panel-title {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.panel-count {
+  font-size: 11px;
+  color: var(--muted);
+  background: rgba(255,255,255,0.04);
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+
+/* ── Data table ──────────────────────────────────────────── */
+.dtable { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+.dtable th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 12px 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.dtable td {
+  padding: 11px 12px 11px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.dtable tr:last-child td { border-bottom: none; }
+.dtable tbody tr { transition: background .15s; }
+.dtable tbody tr:hover td { background: rgba(0,232,162,0.03); }
+
+/* ── Bar chart rows ──────────────────────────────────────── */
+.bar-rows { display: flex; flex-direction: column; gap: 14px; }
+
+.bar-row {}
+.bar-meta { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px; }
+.bar-name { color: var(--text); }
+.bar-val { color: var(--accent); font-weight: 500; font-size: 11px; }
+.bar-track { height: 3px; background: rgba(255,255,255,0.06); border-radius: 2px; }
+.bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width .9s cubic-bezier(.22,1,.36,1); }
+
+/* ── Chart panel ─────────────────────────────────────────── */
+.chart-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 14px; }
+
+.chart-wrap { position: relative; height: 240px; }
+
+/* ── Sheet tabs ──────────────────────────────────────────── */
+.sheet-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+
+.tab-btn {
+  font-family: var(--syne);
+  font-size: 11px;
+  padding: 5px 14px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: 0.05em;
+}
+
+.tab-btn:hover { border-color: var(--accent); color: var(--accent); }
+.tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 500; }
+
+/* ── Empty state ─────────────────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.empty-icon { font-size: 2rem; margin-bottom: 1rem; opacity: 0.4; }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .main-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .kpi-value { font-size: 1.5rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-name">Command</div>
+      <div class="brand-sub">Live Operations Dashboard</div>
+    </div>
+    <div class="topbar-right">
+      <div class="live-pill"><div class="pulse"></div> Live</div>
+      <div class="ts" id="tsLabel">—</div>
+    </div>
+  </div>
+
+  <!-- Config -->
+  <div class="config-bar">
+    <input id="apiUrl" type="text"
+      placeholder="Paste your Apps Script Web App URL here…"
+      value="" />
+    <button class="btn btn-primary" onclick="fetchData()">Connect</button>
+    <button class="btn btn-ghost" onclick="fetchData()">↻ Refresh</button>
+  </div>
+
+  <div class="status-bar" id="statusBar">
+    <div class="spinner" id="spinner"></div>
+    <span id="statusText">Paste your Apps Script URL above and click Connect — or see the README for setup instructions.</span>
+  </div>
+
+  <!-- Sheet tabs (shown when multiple sheets exist) -->
+  <div class="sheet-tabs" id="sheetTabs" style="display:none;"></div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" id="kpiGrid">
+    <div class="kpi"><div class="kpi-label">Total Rows</div><div class="kpi-value" id="kv0">—</div><div class="kpi-delta" id="kd0"></div></div>
+    <div class="kpi"><div class="kpi-label">Numeric Sum</div><div class="kpi-value" id="kv1">—</div><div class="kpi-delta" id="kd1"></div></div>
+    <div class="kpi"><div class="kpi-label">Avg Value</div><div class="kpi-value" id="kv2">—</div><div class="kpi-delta" id="kd2"></div></div>
+    <div class="kpi"><div class="kpi-label">Columns</div><div class="kpi-value" id="kv3">—</div><div class="kpi-delta" id="kd3"></div></div>
+  </div>
+
+  <!-- Trend chart -->
+  <div class="chart-panel">
+    <div class="panel-header">
+      <div class="panel-title">Trend — first numeric column</div>
+      <div id="chartNote" class="ts"></div>
+    </div>
+    <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+  </div>
+
+  <!-- Table + bars -->
+  <div class="main-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Data Table</div>
+        <div class="panel-count" id="rowCount">0 rows</div>
+      </div>
+      <div id="tableWrap">
+        <div class="empty"><div class="empty-icon">⬡</div>No data yet</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Top Values</div>
+      </div>
+      <div class="bar-rows" id="barRows">
+        <div class="empty"><div class="empty-icon">⬡</div>No data yet</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrapper -->
+
+<script>
+// ── State ────────────────────────────────────────────────────
+let allSheets = {};
+let activeSheet = null;
+let chartInst = null;
+let refreshTimer = null;
+
+// ── Helpers ──────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmt = n => {
+  if (typeof n !== 'number') return String(n);
+  if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(2) + 'M';
+  if (Math.abs(n) >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return n % 1 === 0 ? n.toString() : n.toFixed(2);
+};
+
+function setStatus(msg, type='') {
+  $('statusBar').className = 'status-bar' + (type ? ' '+type : '');
+  $('statusText').textContent = msg;
+}
+
+function setLoading(on) {
+  $('spinner').style.display = on ? 'block' : 'none';
+}
+
+// ── Fetch from Apps Script ────────────────────────────────────
+async function fetchData() {
+  const url = $('apiUrl').value.trim();
+  if (!url) { setStatus('Please paste your Apps Script Web App URL.', 'error'); return; }
+
+  setLoading(true);
+  setStatus('Connecting to Google Sheets…');
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (!json.ok) throw new Error('Script returned an error.');
+
+    allSheets = json.sheets || {};
+    const sheetNames = Object.keys(allSheets);
+    if (!sheetNames.length) throw new Error('No sheets found with data.');
+
+    // Build sheet tabs
+    const tabsEl = $('sheetTabs');
+    tabsEl.innerHTML = '';
+    if (sheetNames.length > 1) {
+      tabsEl.style.display = 'flex';
+      sheetNames.forEach(name => {
+        const btn = document.createElement('button');
+        btn.className = 'tab-btn' + (name === (activeSheet || sheetNames[0]) ? ' active' : '');
+        btn.textContent = name;
+        btn.onclick = () => switchSheet(name);
+        tabsEl.appendChild(btn);
+      });
+    } else {
+      tabsEl.style.display = 'none';
+    }
+
+    activeSheet = activeSheet && allSheets[activeSheet] ? activeSheet : sheetNames[0];
+    renderSheet(activeSheet);
+
+    $('tsLabel').textContent = 'Updated ' + new Date(json.updated).toLocaleTimeString();
+    setStatus('Connected — ' + sheetNames.length + ' sheet(s) loaded.', 'ok');
+
+    // Auto-refresh every 60s
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(fetchData, 60000);
+
+  } catch(err) {
+    setStatus('Error: ' + err.message + ' — Check that the script is deployed as "Anyone" can access.', 'error');
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ── Switch sheet tab ──────────────────────────────────────────
+function switchSheet(name) {
+  activeSheet = name;
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent === name);
+  });
+  renderSheet(name);
+}
+
+// ── Render a sheet's data ─────────────────────────────────────
+function renderSheet(name) {
+  const sheet = allSheets[name];
+  if (!sheet) return;
+  const { headers, rows } = sheet;
+
+  // Find numeric columns
+  const numCols = headers.filter(h => rows.some(r => !isNaN(parseFloat(r[h]))));
+  const labelCol = headers.find(h => !numCols.includes(h)) || headers[0];
+  const numCol = numCols[0];
+
+  const numVals = numCol
+    ? rows.map(r => parseFloat(r[numCol])).filter(v => !isNaN(v))
+    : [];
+  const total = numVals.reduce((a,b)=>a+b,0);
+  const avg = numVals.length ? total/numVals.length : 0;
+
+  // KPIs
+  $('kv0').textContent = rows.length;
+  $('kd0').textContent = 'rows in this sheet';
+  $('kv1').textContent = numCol ? fmt(total) : 'N/A';
+  $('kd1').textContent = numCol || 'no numeric column';
+  $('kv2').textContent = numCol ? fmt(avg) : 'N/A';
+  $('kd2').textContent = 'average';
+  $('kv3').textContent = headers.length;
+  $('kd3').textContent = 'columns';
+
+  // Table
+  const maxTableRows = 20;
+  $('rowCount').textContent = rows.length + ' rows';
+  let html = '<table class="dtable"><thead><tr>';
+  headers.forEach(h => { html += `<th>${h}</th>`; });
+  html += '</tr></thead><tbody>';
+  rows.slice(0, maxTableRows).forEach(row => {
+    html += '<tr>';
+    headers.forEach(h => { html += `<td>${row[h] ?? ''}</td>`; });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  if (rows.length > maxTableRows) {
+    html += `<p style="font-size:11px;color:var(--muted);margin-top:10px;">Showing first ${maxTableRows} of ${rows.length} rows</p>`;
+  }
+  $('tableWrap').innerHTML = html;
+
+  // Bar chart
+  const barEl = $('barRows');
+  if (numCol && labelCol) {
+    const sorted = [...rows]
+      .filter(r => !isNaN(parseFloat(r[numCol])))
+      .sort((a,b) => parseFloat(b[numCol]) - parseFloat(a[numCol]))
+      .slice(0, 8);
+    const maxVal = parseFloat(sorted[0]?.[numCol]) || 1;
+    barEl.innerHTML = sorted.map(r => {
+      const v = parseFloat(r[numCol]);
+      const pct = Math.round(v / maxVal * 100);
+      return `<div class="bar-row">
+        <div class="bar-meta"><span class="bar-name">${r[labelCol]}</span><span class="bar-val">${fmt(v)}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join('');
+  } else {
+    barEl.innerHTML = '<div class="empty"><div class="empty-icon">⬡</div>No numeric column found</div>';
+  }
+
+  // Trend chart
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+  if (numCol) {
+    $('chartNote').textContent = numCol;
+    const labels = rows.map((r,i) => r[labelCol] || 'Row ' + (i+1));
+    const data = rows.map(r => parseFloat(r[numCol]) || 0);
+    chartInst = new Chart($('trendChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          borderColor: '#00e8a2',
+          backgroundColor: 'rgba(0,232,162,0.06)',
+          borderWidth: 2,
+          pointRadius: labels.length > 30 ? 0 : 3,
+          pointBackgroundColor: '#00e8a2',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: { color: '#6b8078', font: { family: 'Syne', size: 10 }, maxTicksLimit: 12 }
+          },
+          y: {
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: { color: '#6b8078', font: { family: 'Syne', size: 10 }, callback: v => fmt(v) }
+          }
+        }
+      }
+    });
+  } else {
+    $('chartNote').textContent = 'no numeric column';
+  }
+}
+
+// ── Auto-connect if URL was saved in localStorage ─────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('dashApiUrl');
+  if (saved) {
+    $('apiUrl').value = saved;
+  }
+  $('apiUrl').addEventListener('change', () => {
+    localStorage.setItem('dashApiUrl', $('apiUrl').value.trim());
+  });
+});
+</script>
+</body>
+</html>
