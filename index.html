@@ -452,34 +452,69 @@ function processWorkbook(wb){
 function parsePKRV(raw){
   if(!raw||raw.length<2)return null;
 
+  // toTime: converts any date representation to a timezone-safe integer (YYYYMMDD)
+  // All comparisons are done as YYYYMMDD integers — no timezone shifts possible.
   const toTime=d=>{
     if(!d&&d!==0)return 0;
-    // JS Date object (SheetJS cellDates:true)
-    if(d instanceof Date)return isNaN(d.getTime())?0:d.getTime();
-    // Excel serial number (e.g. 45678)
-    if(typeof d==='number')return(d-25569)*86400000; // Excel epoch to JS ms
+
+    // JS Date object (SheetJS cellDates:true) — use UTC methods to avoid tz shift
+    if(d instanceof Date){
+      if(isNaN(d.getTime()))return 0;
+      return d.getUTCFullYear()*10000+(d.getUTCMonth()+1)*100+d.getUTCDate();
+    }
+
+    // Excel serial number — convert to UTC date components directly
+    // Serial 1 = 1 Jan 1900; adjust for Excel's false leap year (serial 60 = 29 Feb 1900)
+    if(typeof d==='number'&&d>0){
+      const serial=d>60?d-1:d; // skip the phantom 29-Feb-1900
+      const epoch=new Date(Date.UTC(1900,0,1)+(serial-1)*86400000);
+      return epoch.getUTCFullYear()*10000+(epoch.getUTCMonth()+1)*100+epoch.getUTCDate();
+    }
+
     const s=String(d).trim();
     if(!s)return 0;
-    // Try native parse first (works for ISO, MM/DD/YYYY, etc.)
-    let p=new Date(s);
-    if(!isNaN(p.getTime()))return p.getTime();
-    // DD-Mon-YYYY or DD/Mon/YYYY (e.g. "28-Mar-2026", "28/Mar/2026")
+
+    const MONTHS={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+
+    // DD-Mon-YYYY or DD/Mon/YYYY  e.g. "27-Mar-2026", "27/Mar/2026"
     const m1=s.match(/^(\d{1,2})[-\/\s](\w+)[-\/\s](\d{4})$/);
-    if(m1){p=new Date(m1[2]+' '+m1[1]+' '+m1[3]);if(!isNaN(p.getTime()))return p.getTime();}
-    // DD/MM/YYYY
-    const m2=s.match(/^(\d{1,2})[\/](\d{1,2})[\/](\d{4})$/);
-    if(m2){p=new Date(m2[3]+'-'+m2[2].padStart(2,'0')+'-'+m2[1].padStart(2,'0'));if(!isNaN(p.getTime()))return p.getTime();}
+    if(m1){
+      const mo=MONTHS[m1[2].slice(0,3).toLowerCase()];
+      if(mo)return parseInt(m1[3])*10000+mo*100+parseInt(m1[1]);
+    }
+
     // YYYY-MM-DD
-    const m3=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if(m3)return new Date(s).getTime();
+    const m2=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(m2)return parseInt(m2[1])*10000+parseInt(m2[2])*100+parseInt(m2[3]);
+
+    // DD/MM/YYYY
+    const m3=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(m3)return parseInt(m3[3])*10000+parseInt(m3[2])*100+parseInt(m3[1]);
+
+    // MM/DD/YYYY (US format — only if day > 12 would be ambiguous, use as fallback)
+    const m4=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(m4)return parseInt(m4[3])*10000+parseInt(m4[1])*100+parseInt(m4[2]);
+
     return 0;
   };
 
-  const fmtDate=d=>{
-    if(d instanceof Date&&!isNaN(d.getTime()))
-      return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  // fmtDate: formats any date value to a readable string, also timezone-safe
+  const fmtDateSafe=d=>{
+    if(d instanceof Date&&!isNaN(d.getTime())){
+      const y=d.getUTCFullYear(),mo=d.getUTCMonth(),day=d.getUTCDate();
+      const mnames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return String(day).padStart(2,'0')+'-'+mnames[mo]+'-'+y;
+    }
+    if(typeof d==='number'&&d>0){
+      const serial=d>60?d-1:d;
+      const epoch=new Date(Date.UTC(1900,0,1)+(serial-1)*86400000);
+      const mnames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return String(epoch.getUTCDate()).padStart(2,'0')+'-'+mnames[epoch.getUTCMonth()]+'-'+epoch.getUTCFullYear();
+    }
     return String(d).trim();
   };
+
+
 
   // Row 0 = header: col 0 is the tenor label column, remaining cols are dates
   const headerRow=raw[0];
@@ -494,7 +529,7 @@ function parsePKRV(raw){
 
   if(bestColIdx<0||bestTime===0)return null;
 
-  const curveDate=fmtDate(headerRow[bestColIdx]);
+  const curveDate=fmtDateSafe(headerRow[bestColIdx]);
 
   // Tenor sort helper
   const tenorMonths=t=>{
