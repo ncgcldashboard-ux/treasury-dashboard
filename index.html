@@ -531,11 +531,15 @@ function parsePKRV(raw){
 
   const curveDate=fmtDateSafe(headerRow[bestColIdx]);
 
-  // Tenor sort helper
-  const tenorMonths=t=>{
-    const m=String(t).trim().match(/(\d+)\s*([YyMm])/);
-    if(!m)return 999;
-    return parseInt(m[1])*(m[2].toLowerCase()==='y'?12:1);
+  // Tenor sort helper — handles 1W, 2W, 1M, 3M, 6M, 1Y, 2Y, 3Y, 5Y, 10Y, 15Y, 20Y, 30Y
+  const tenorWeeks=t=>{
+    const m=String(t).trim().match(/(\d+)\s*([WwMmYy])/);
+    if(!m)return 99999;
+    const n=parseInt(m[1]),u=m[2].toLowerCase();
+    if(u==='w')return n;
+    if(u==='m')return n*4.33;
+    if(u==='y')return n*52;
+    return 99999;
   };
 
   // Collect points from data rows (skip row 0)
@@ -552,7 +556,7 @@ function parsePKRV(raw){
   });
 
   if(!points.length)return null;
-  points.sort((a,b)=>tenorMonths(a.tenor)-tenorMonths(b.tenor));
+  points.sort((a,b)=>tenorWeeks(a.tenor)-tenorWeeks(b.tenor));
   return{date:curveDate,points};
 }
 // ─────────────────────────────────────────────────────────────
@@ -812,19 +816,29 @@ function renderWoW(headers,dataRows,pkrvData){
   // 4. PKRV Yield Curve — exclusively from "PKRV rates" sheet
   dc('c-pkrv');
   if(pkrvData&&pkrvData.points&&pkrvData.points.length>=2){
-    $('pkrv-sub').textContent='SBP Pakistan Rupee Valuation Rates · '+pkrvData.date;
+    $('pkrv-sub').textContent='SBP PKRV Rates · As of '+pkrvData.date;
     const pkrvLabels=pkrvData.points.map(p=>p.tenor);
     const pkrvVals=pkrvData.points.map(p=>p.yield);
+    // Compute Y-axis range dynamically from actual data — never hardcoded
+    const yMin=Math.floor((Math.min(...pkrvVals)-0.5)*2)/2; // floor to nearest 0.5
+    const yMax=Math.ceil((Math.max(...pkrvVals)+0.5)*2)/2;  // ceil to nearest 0.5
     charts['c-pkrv']=new Chart($('c-pkrv'),{
-    type:'line',
-    data:{labels:pkrvLabels,datasets:[{
-      label:'Yield (%)',data:pkrvVals,
-      borderColor:'#1e6091',backgroundColor:'rgba(30,96,145,0.08)',
-      borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#1e6091',
-      tension:0.35,fill:true
-    }]},
-    options:{...CD,plugins:{...CD.plugins,legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.parsed.y.toFixed(2)+'%'}}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#f0ebe0'},ticks:{callback:vv=>vv.toFixed(1)+'%'},suggestedMin:9,suggestedMax:14}}}
+      type:'line',
+      data:{labels:pkrvLabels,datasets:[{
+        label:'Yield (%)',data:pkrvVals,
+        borderColor:'#1e6091',backgroundColor:'rgba(30,96,145,0.08)',
+        borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#1e6091',
+        tension:0.35,fill:true
+      }]},
+      options:{...CD,
+        plugins:{...CD.plugins,legend:{display:false},
+          tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.parsed.y.toFixed(2)+'%'}}},
+        scales:{
+          x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45}},
+          y:{grid:{color:'#f0ebe0'},min:yMin,max:yMax,
+             ticks:{callback:vv=>vv.toFixed(2)+'%',font:{size:10}}}
+        }
+      }
     });
   } else {
     $('pkrv-sub').textContent='PKRV rates sheet not found in xlsx';
