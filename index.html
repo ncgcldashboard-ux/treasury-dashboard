@@ -439,78 +439,87 @@ function processWorkbook(wb){
 }
 
 // ─────────────────────────────────────────────────────────────
-// PARSE PKRV HISTORY SHEET
-// Expected layout: Date in col 0, then tenor columns (3M, 6M, 1Y, 3Y, 5Y, 10Y…)
-// Finds the most recent date row (highest date value in the date column)
-// Yields stored as decimals (0.1172 = 11.72%) — multiply by 100
+// PARSE PKRV RATES SHEET
+//
+// Layout: tenors in rows (col 0), dates across columns (row 0).
+//   Row 0:  [label]  | 01-Jan-26 | 02-Jan-26 | … | 28-Mar-26
+//   Row 1:  3M       |  0.1150   |  0.1148   | … |  0.1144
+//   Row 2:  6M       |  0.1160   | …
+//
+// Finds the column with the most recent date, reads yields from that column.
+// Yields stored as decimals (0.1172 = 11.72%) — multiplied by 100.
 // ─────────────────────────────────────────────────────────────
 function parsePKRV(raw){
-  if(!raw||!raw.length)return null;
+  if(!raw||raw.length<2)return null;
 
-  // Find header row — must contain tenor-like values OR "date"
-  const hIdx=raw.findIndex(r=>r.some(c=>/^date$/i.test(String(c).trim()))||
-                               r.some(c=>/^\d+[YyMm]$/.test(String(c).trim())));
-  if(hIdx<0)return null;
-
-  const hdr=raw[hIdx].map(c=>String(c).trim());
-  const dateColIdx=hdr.findIndex(h=>/^date$/i.test(h));
-
-  // Find all tenor columns
-  const tenorCols=[];
-  hdr.forEach((h,i)=>{
-    if(/^\d+[YyMm]$/.test(h)||/^(3M|6M|1Y|2Y|3Y|5Y|7Y|10Y|15Y|20Y|30Y)$/i.test(h)){
-      tenorCols.push({tenor:h,idx:i});
-    }
-  });
-  if(!tenorCols.length)return null;
-
-  // Collect all data rows that have a valid date
-  const dataRows=raw.slice(hIdx+1).filter(r=>{
-    const d=dateColIdx>=0?r[dateColIdx]:r[0];
-    return d!==null&&d!==undefined&&d!=='';
-  });
-  if(!dataRows.length)return null;
-
-  // Find the most recent row by date
-  // Dates may be JS Date objects (from SheetJS cellDates:true) or strings
   const toTime=d=>{
-    if(d instanceof Date)return d.getTime();
-    const parsed=new Date(String(d));
-    return isNaN(parsed.getTime())?0:parsed.getTime();
+    if(!d&&d!==0)return 0;
+    // JS Date object (SheetJS cellDates:true)
+    if(d instanceof Date)return isNaN(d.getTime())?0:d.getTime();
+    // Excel serial number (e.g. 45678)
+    if(typeof d==='number')return(d-25569)*86400000; // Excel epoch to JS ms
+    const s=String(d).trim();
+    if(!s)return 0;
+    // Try native parse first (works for ISO, MM/DD/YYYY, etc.)
+    let p=new Date(s);
+    if(!isNaN(p.getTime()))return p.getTime();
+    // DD-Mon-YYYY or DD/Mon/YYYY (e.g. "28-Mar-2026", "28/Mar/2026")
+    const m1=s.match(/^(\d{1,2})[-\/\s](\w+)[-\/\s](\d{4})$/);
+    if(m1){p=new Date(m1[2]+' '+m1[1]+' '+m1[3]);if(!isNaN(p.getTime()))return p.getTime();}
+    // DD/MM/YYYY
+    const m2=s.match(/^(\d{1,2})[\/](\d{1,2})[\/](\d{4})$/);
+    if(m2){p=new Date(m2[3]+'-'+m2[2].padStart(2,'0')+'-'+m2[1].padStart(2,'0'));if(!isNaN(p.getTime()))return p.getTime();}
+    // YYYY-MM-DD
+    const m3=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(m3)return new Date(s).getTime();
+    return 0;
   };
-  const dateCol=dateColIdx>=0?dateColIdx:0;
-  let latestRow=dataRows[0];
-  dataRows.forEach(r=>{
-    if(toTime(r[dateCol])>toTime(latestRow[dateCol]))latestRow=r;
+
+  const fmtDate=d=>{
+    if(d instanceof Date&&!isNaN(d.getTime()))
+      return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    return String(d).trim();
+  };
+
+  // Row 0 = header: col 0 is the tenor label column, remaining cols are dates
+  const headerRow=raw[0];
+
+  // Find the column index with the most recent date (skip col 0)
+  let bestColIdx=-1,bestTime=0;
+  headerRow.forEach((cell,ci)=>{
+    if(ci===0)return;
+    const t=toTime(cell);
+    if(t>bestTime){bestTime=t;bestColIdx=ci;}
   });
 
-  // Format the date
-  const rawDate=latestRow[dateCol];
-  let curveDate='';
-  if(rawDate instanceof Date){
-    curveDate=rawDate.toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'});
-  } else {
-    curveDate=String(rawDate).trim();
-  }
+  if(bestColIdx<0||bestTime===0)return null;
 
-  // Extract tenor → yield pairs from this row
-  // Multiply by 100 since stored as decimals
-  const points=tenorCols.map(({tenor,idx})=>{
-    const raw=latestRow[idx];
-    const n=parseFloat(String(raw).replace(/[,\s%]/g,''));
-    if(isNaN(n)||n===0)return null;
-    // If value looks like a decimal rate (< 1), multiply by 100
-    const yield_=n<1?n*100:n;
-    return{tenor,yield:yield_};
-  }).filter(Boolean);
+  const curveDate=fmtDate(headerRow[bestColIdx]);
 
-  // Sort by tenor in months
-  const tenorMonths=t=>{const m=t.match(/(\d+)([YyMm])/);if(!m)return 0;return parseInt(m[1])*(m[2].toLowerCase()==='y'?12:1);};
+  // Tenor sort helper
+  const tenorMonths=t=>{
+    const m=String(t).trim().match(/(\d+)\s*([YyMm])/);
+    if(!m)return 999;
+    return parseInt(m[1])*(m[2].toLowerCase()==='y'?12:1);
+  };
+
+  // Collect points from data rows (skip row 0)
+  const points=[];
+  raw.slice(1).forEach(row=>{
+    if(!row||!row[0])return;
+    const tenor=String(row[0]).trim();
+    if(!tenor)return;
+    const n=parseFloat(String(row[bestColIdx]||'').replace(/[,\s%]/g,''));
+    if(isNaN(n)||n===0)return;
+    // Decimal (0.1172) → ×100; already percent (11.72) → use as-is
+    const yld=Math.abs(n)<1?n*100:n;
+    points.push({tenor,yield:yld});
+  });
+
+  if(!points.length)return null;
   points.sort((a,b)=>tenorMonths(a.tenor)-tenorMonths(b.tenor));
-
   return{date:curveDate,points};
 }
-
 // ─────────────────────────────────────────────────────────────
 // RENDER WoW POSITIONS
 // ─────────────────────────────────────────────────────────────
@@ -765,34 +774,13 @@ function renderWoW(headers,dataRows,pkrvData){
     options:{...CD,scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{beginAtZero:true,grid:{color:'#f0ebe0'},ticks:{callback:vv=>vv+'M'}}}}
   });
 
-  // 4. PKRV Yield Curve (or secondary yields fallback)
+  // 4. PKRV Yield Curve — exclusively from "PKRV rates" sheet
   dc('c-pkrv');
-  let pkrvLabels,pkrvVals,pkrvTitle;
   if(pkrvData&&pkrvData.points&&pkrvData.points.length>=2){
-    pkrvLabels=pkrvData.points.map(p=>p.tenor);
-    pkrvVals=pkrvData.points.map(p=>p.yield);
-    pkrvTitle='PKRV Yield Curve'+(pkrvData.date?' · '+pkrvData.date:'');
-    $('pkrv-sub').textContent='SBP Pakistan Rupee Valuation Rates'+(pkrvData.date?' · '+pkrvData.date:'');
-  } else {
-    // Fallback: use secondary yields from positions that have them
-    const secPts=positions.filter(r=>iSY>=0&&v(r,iSY)!=='').map(r=>{
-      const tenor=iTN>=0?String(v(r,iTN)).trim():'';
-      const yld=parseNum(v(r,iSY));
-      return{tenor,yld};
-    }).filter(x=>x.tenor&&!isNaN(x.yld)&&x.yld>0);
-    // Also add known PKRV reference points from sheet data
-    const knownPts=[
-      {tenor:'6M',yld:11.44},{tenor:'1Y',yld:11.72}
-    ];
-    const allPts=[...knownPts,...secPts].filter((p,i,a)=>a.findIndex(x=>x.tenor===p.tenor)===i);
-    const tenorOrd={'3M':1,'6M':2,'1Y':3,'2Y':4,'3Y':5,'5Y':6,'7Y':7,'10Y':8};
-    allPts.sort((a,b)=>(tenorOrd[a.tenor]||99)-(tenorOrd[b.tenor]||99));
-    pkrvLabels=allPts.map(p=>p.tenor);
-    pkrvVals=allPts.map(p=>p.yld);
-    pkrvTitle='Secondary yields fallback — add a sheet named "PKRV rates" to xlsx for full curve';
-    $('pkrv-sub').textContent='Secondary yields from WoW sheet · Add "PKRV rates" sheet for full curve';
-  }
-  charts['c-pkrv']=new Chart($('c-pkrv'),{
+    $('pkrv-sub').textContent='SBP Pakistan Rupee Valuation Rates · '+pkrvData.date;
+    const pkrvLabels=pkrvData.points.map(p=>p.tenor);
+    const pkrvVals=pkrvData.points.map(p=>p.yield);
+    charts['c-pkrv']=new Chart($('c-pkrv'),{
     type:'line',
     data:{labels:pkrvLabels,datasets:[{
       label:'Yield (%)',data:pkrvVals,
@@ -802,7 +790,13 @@ function renderWoW(headers,dataRows,pkrvData){
     }]},
     options:{...CD,plugins:{...CD.plugins,legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.parsed.y.toFixed(2)+'%'}}},
       scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#f0ebe0'},ticks:{callback:vv=>vv.toFixed(1)+'%'},suggestedMin:9,suggestedMax:14}}}
-  });
+    });
+  } else {
+    $('pkrv-sub').textContent='PKRV rates sheet not found in xlsx';
+    const ctx=$('c-pkrv').getContext('2d');
+    ctx.font='14px Segoe UI';ctx.fillStyle='#78909c';ctx.textAlign='center';
+    ctx.fillText('Add a sheet named "PKRV rates" to data.xlsx',$('c-pkrv').width/2,100);
+  }
 
   // 6. Gain/Loss per instrument
   dc('c-gl');charts['c-gl']=new Chart($('c-gl'),{
