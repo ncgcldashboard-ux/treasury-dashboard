@@ -456,8 +456,10 @@ function processWorkbook(wb){
   const headers=rawWoW[headerIdx].map(c=>String(c).trim());
   const dataRows=rawWoW.slice(headerIdx+1).filter(r=>r.some(c=>c!==''&&c!==null&&c!==undefined));
 
-  // PKRV sheet — look for it by name
-  const pkrvName=wb.SheetNames.find(n=>/pkrv|yield.?curve|pakistan.?rupee/i.test(n));
+  // PKRV sheet — look for "PKRV History" (or any name containing pkrv)
+  const pkrvName=wb.SheetNames.find(n=>/pkrv.?hist/i.test(n))
+               ||wb.SheetNames.find(n=>/pkrv/i.test(n))
+               ||wb.SheetNames.find(n=>/yield.?curve/i.test(n));
   let pkrvData=null;
   if(pkrvName){
     const wsPKRV=wb.Sheets[pkrvName];
@@ -469,44 +471,75 @@ function processWorkbook(wb){
 }
 
 // ─────────────────────────────────────────────────────────────
-// PARSE PKRV SHEET
-// Expects columns: Date | Tenor (3M, 6M, 1Y, 3Y, 5Y, 10Y…) | Yield
-// or rows of: Tenor | Yield for a single date
+// PARSE PKRV HISTORY SHEET
+// Expected layout: Date in col 0, then tenor columns (3M, 6M, 1Y, 3Y, 5Y, 10Y…)
+// Finds the most recent date row (highest date value in the date column)
+// Yields stored as decimals (0.1172 = 11.72%) — multiply by 100
 // ─────────────────────────────────────────────────────────────
 function parsePKRV(raw){
   if(!raw||!raw.length)return null;
-  // Find header row
-  const hIdx=raw.findIndex(r=>r.some(c=>/date|tenor|3m|6m|1y/i.test(String(c))));
+
+  // Find header row — must contain tenor-like values OR "date"
+  const hIdx=raw.findIndex(r=>r.some(c=>/^date$/i.test(String(c).trim()))||
+                               r.some(c=>/^\d+[YyMm]$/.test(String(c).trim())));
   if(hIdx<0)return null;
+
   const hdr=raw[hIdx].map(c=>String(c).trim());
-  const dateCol=hdr.findIndex(h=>/date/i.test(h));
-  const rows=raw.slice(hIdx+1).filter(r=>r.some(c=>c!==''&&c!==null));
-  if(!rows.length)return null;
+  const dateColIdx=hdr.findIndex(h=>/^date$/i.test(h));
 
-  // Most recent row = last non-empty row
-  const lastRow=rows[rows.length-1];
-
-  // If date column exists, get that date
-  let curveDate='';
-  if(dateCol>=0&&lastRow[dateCol]){
-    const d=lastRow[dateCol];
-    if(d instanceof Date)curveDate=d.toLocaleDateString('en-PK',{dateStyle:'medium'});
-    else curveDate=String(d);
-  }
-
-  // Collect tenor→yield pairs from the header / last row
-  const tenorPattern=/^\d+[YMmy]$|^(?:3M|6M|1Y|2Y|3Y|5Y|7Y|10Y|15Y|20Y|30Y)$/i;
-  const points=[];
+  // Find all tenor columns
+  const tenorCols=[];
   hdr.forEach((h,i)=>{
-    if(tenorPattern.test(h.replace(/\s/g,''))){
-      const y=parseFloat(String(lastRow[i]).replace(/[,%\s]/g,''));
-      if(!isNaN(y)&&y>0) points.push({tenor:h.trim(),yield:y});
+    if(/^\d+[YyMm]$/.test(h)||/^(3M|6M|1Y|2Y|3Y|5Y|7Y|10Y|15Y|20Y|30Y)$/i.test(h)){
+      tenorCols.push({tenor:h,idx:i});
     }
   });
+  if(!tenorCols.length)return null;
 
-  // Sort by maturity in months
+  // Collect all data rows that have a valid date
+  const dataRows=raw.slice(hIdx+1).filter(r=>{
+    const d=dateColIdx>=0?r[dateColIdx]:r[0];
+    return d!==null&&d!==undefined&&d!=='';
+  });
+  if(!dataRows.length)return null;
+
+  // Find the most recent row by date
+  // Dates may be JS Date objects (from SheetJS cellDates:true) or strings
+  const toTime=d=>{
+    if(d instanceof Date)return d.getTime();
+    const parsed=new Date(String(d));
+    return isNaN(parsed.getTime())?0:parsed.getTime();
+  };
+  const dateCol=dateColIdx>=0?dateColIdx:0;
+  let latestRow=dataRows[0];
+  dataRows.forEach(r=>{
+    if(toTime(r[dateCol])>toTime(latestRow[dateCol]))latestRow=r;
+  });
+
+  // Format the date
+  const rawDate=latestRow[dateCol];
+  let curveDate='';
+  if(rawDate instanceof Date){
+    curveDate=rawDate.toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'});
+  } else {
+    curveDate=String(rawDate).trim();
+  }
+
+  // Extract tenor → yield pairs from this row
+  // Multiply by 100 since stored as decimals
+  const points=tenorCols.map(({tenor,idx})=>{
+    const raw=latestRow[idx];
+    const n=parseFloat(String(raw).replace(/[,\s%]/g,''));
+    if(isNaN(n)||n===0)return null;
+    // If value looks like a decimal rate (< 1), multiply by 100
+    const yield_=n<1?n*100:n;
+    return{tenor,yield:yield_};
+  }).filter(Boolean);
+
+  // Sort by tenor in months
   const tenorMonths=t=>{const m=t.match(/(\d+)([YyMm])/);if(!m)return 0;return parseInt(m[1])*(m[2].toLowerCase()==='y'?12:1);};
   points.sort((a,b)=>tenorMonths(a.tenor)-tenorMonths(b.tenor));
+
   return{date:curveDate,points};
 }
 
@@ -544,13 +577,13 @@ function renderWoW(headers,dataRows,pkrvData){
   // Value accessor by column index
   const v=(row,idx)=>idx>=0?row[idx]??'':'';
 
-  // Get a % value that is ALREADY stored as a percentage number (10.88 = 10.88%)
-  // Just display as-is with 2dp + %
+  // Values are stored as decimals in the xlsx (0.1088 = 10.88%)
+  // Multiply by 100 before displaying.
   const getPct=val=>{
     if(val===null||val===undefined||val==='')return'—';
     const n=parseFloat(String(val).replace(/[,\s%]/g,''));
     if(isNaN(n))return'—';
-    return n.toFixed(2)+'%';
+    return (n*100).toFixed(2)+'%';
   };
 
   // ── Partition rows ──────────────────────────────────────────
@@ -571,9 +604,10 @@ function renderWoW(headers,dataRows,pkrvData){
 
   // ── Special values ──────────────────────────────────────────
   const T=sp.T, L=sp.L;
-  const bench =sp.bench ??10.38;
-  const alpha =sp.alpha ??-3.73;  // already a % value e.g. -3.73
-  const mk3   =sp.mk    ??11.38;
+  // These are stored as decimals (0.1038 = 10.38%) — multiply by 100 to display
+  const bench =sp.bench!=null ? sp.bench*100 : 10.38;
+  const alpha =sp.alpha!=null ? sp.alpha*100 : -3.73;
+  const mk3   =sp.mk!=null    ? sp.mk*100    : 11.38;
 
   // NAV: col3=past week, col4=current week, col28=dirty (last col before end)
   const navP   = sp.navR ? (parseNum(sp.navR[iPW>=0?iPW:3])||82.75) : 82.75;
@@ -595,8 +629,8 @@ function renderWoW(headers,dataRows,pkrvData){
     const instr=String(r[iI]||r[1]||'').trim();
     if(!instr){
       const rateVal=iRT>=0?parseNum(r[iRT]):NaN;
-      const glVal=iGL>=0?parseNum(r[iGL]):NaN;
-      if(!isNaN(rateVal)&&rateVal>5&&rateVal<20) netRate=rateVal;
+      // stored as decimal e.g. 0.0963 = 9.63%
+      if(!isNaN(rateVal)&&rateVal>0.01&&rateVal<0.30) netRate=rateVal*100;
     }
   });
 
@@ -772,8 +806,8 @@ function renderWoW(headers,dataRows,pkrvData){
     options:{...CD,cutout:'50%',plugins:{...CD.plugins,legend:{position:'right',labels:{font:{size:9},boxWidth:10,color:'#0d1b2a'}}},tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.parsed.toFixed(2)+'%'}}}
   });
 
-  // 2. Weekly yield bar
-  const yD=positions.map(r=>({n:sn(r.__instr||r[1]),v:parseNum(v(r,iWY>=0?iWY:14))||0})).filter(x=>x.v>0);
+  // 2. Weekly yield bar — multiply raw decimals by 100 for chart axis
+  const yD=positions.map(r=>({n:sn(r.__instr||r[1]),v:(parseNum(v(r,iWY>=0?iWY:14))||0)*100})).filter(x=>x.v>0);
   dc('c-yield');charts['c-yield']=new Chart($('c-yield'),{
     type:'bar',
     data:{labels:yD.map(x=>x.n),datasets:[{data:yD.map(x=>x.v),backgroundColor:CC,borderRadius:4,borderSkipped:false}]},
@@ -830,13 +864,13 @@ function renderWoW(headers,dataRows,pkrvData){
       scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#f0ebe0'},ticks:{callback:vv=>vv.toFixed(1)+'%'},suggestedMin:9,suggestedMax:14}}}
   });
 
-  // 5. Multi-period returns
+  // 5. Multi-period returns — multiply raw decimals by 100
   dc('c-returns');charts['c-returns']=new Chart($('c-returns'),{
     type:'bar',
     data:{labels:positions.map(r=>sn(r.__instr||r[1])),datasets:[
-      {label:'1-Day', data:positions.map(r=>parseNum(v(r,i1D))||0),backgroundColor:'#1e6091',borderRadius:3,borderSkipped:false},
-      {label:'30-Day',data:positions.map(r=>parseNum(v(r,i30))||0),backgroundColor:'#1a6b28',borderRadius:3,borderSkipped:false},
-      {label:'90-Day',data:positions.map(r=>parseNum(v(r,i90))||0),backgroundColor:'#f9a825',borderRadius:3,borderSkipped:false}
+      {label:'1-Day', data:positions.map(r=>(parseNum(v(r,i1D))||0)*100),backgroundColor:'#1e6091',borderRadius:3,borderSkipped:false},
+      {label:'30-Day',data:positions.map(r=>(parseNum(v(r,i30))||0)*100),backgroundColor:'#1a6b28',borderRadius:3,borderSkipped:false},
+      {label:'90-Day',data:positions.map(r=>(parseNum(v(r,i90))||0)*100),backgroundColor:'#f9a825',borderRadius:3,borderSkipped:false}
     ]},
     options:{...CD,scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{beginAtZero:true,grid:{color:'#f0ebe0'},ticks:{callback:vv=>vv.toFixed(1)+'%'}}}}
   });
