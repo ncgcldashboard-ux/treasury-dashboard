@@ -155,7 +155,6 @@ tfoot td.mono{font-family:'Courier New',monospace;text-align:right;}
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('overview',this)">Overview &amp; Charts</button>
   <button class="tab-btn" onclick="switchTab('positions',this)">WoW Positions</button>
-  <button class="tab-btn" onclick="switchTab('returns',this)">Return Rates</button>
   <button class="tab-btn" onclick="switchTab('fund',this)">Fund Metrics</button>
 </div>
 
@@ -194,10 +193,15 @@ tfoot td.mono{font-family:'Courier New',monospace;text-align:right;}
       <div class="ch-short"><canvas id="c-wow"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-title">PKRV Yield Curve — Most Recent</div>
-      <div class="card-sub" id="pkrv-sub">Pakistan Rupee Valuation rates · SBP</div>
-      <div class="ch-short"><canvas id="c-pkrv"></canvas></div>
+      <div class="card-title">Weekly Gain / Loss per Instrument</div>
+      <div class="card-sub">PKR — green positive, red negative</div>
+      <div class="ch-short"><canvas id="c-gl"></canvas></div>
     </div>
+  </div>
+  <div class="card">
+    <div class="card-title">PKRV Yield Curve — Most Recent</div>
+    <div class="card-sub" id="pkrv-sub">Pakistan Rupee Valuation rates · SBP</div>
+    <div class="ch"><canvas id="c-pkrv"></canvas></div>
   </div>
 </div>
 
@@ -228,40 +232,6 @@ tfoot td.mono{font-family:'Courier New',monospace;text-align:right;}
       <thead><tr><th>Item</th><th class="r">Value (PKR)</th><th class="r">Rate</th><th>Notes</th></tr></thead>
       <tbody id="net-tbody"></tbody>
     </table>
-  </div>
-</div>
-
-<!-- TAB: RETURN RATES -->
-<div id="tab-returns" class="tab-panel">
-  <div class="section-label">Return Rate Summary · All Instruments</div>
-  <div class="tbl-wrap">
-    <table>
-      <thead><tr>
-        <th>Instrument</th>
-        <th class="r">Weekly Yield</th>
-        <th class="r">Tax Adj. (1D)</th>
-        <th class="r">Gross Exp.</th>
-        <th class="r">Tax Adj. (30D)</th>
-        <th class="r">1-Day Return</th>
-        <th class="r">15-Day Return</th>
-        <th class="r">30-Day Return</th>
-        <th class="r">90-Day Return</th>
-      </tr></thead>
-      <tbody id="rate-tbody"></tbody>
-      <tfoot id="rate-tfoot"></tfoot>
-    </table>
-  </div>
-  <div class="g2" style="margin-top:16px;">
-    <div class="card">
-      <div class="card-title">Multi-Period Return Comparison</div>
-      <div class="card-sub">1-Day vs 30-Day vs 90-Day returns by instrument</div>
-      <div class="ch"><canvas id="c-returns"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Weekly Gain / Loss per Instrument</div>
-      <div class="card-sub">PKR — green positive, red negative</div>
-      <div class="ch"><canvas id="c-gl"></canvas></div>
-    </div>
   </div>
 </div>
 
@@ -456,11 +426,8 @@ function processWorkbook(wb){
   const headers=rawWoW[headerIdx].map(c=>String(c).trim());
   const dataRows=rawWoW.slice(headerIdx+1).filter(r=>r.some(c=>c!==''&&c!==null&&c!==undefined));
 
-  // PKRV sheet — look for "PKRV rates", "PKRV History", or any sheet containing "pkrv"
-  const pkrvName=wb.SheetNames.find(n=>/pkrv.?rates?/i.test(n))
-               ||wb.SheetNames.find(n=>/pkrv.?hist/i.test(n))
-               ||wb.SheetNames.find(n=>/pkrv/i.test(n))
-               ||wb.SheetNames.find(n=>/yield.?curve/i.test(n));
+  // PKRV — only read from the "PKRV rates" sheet
+  const pkrvName=wb.SheetNames.find(n=>/pkrv.?rates?/i.test(n));
   let pkrvData=null;
   if(pkrvName){
     const wsPKRV=wb.Sheets[pkrvName];
@@ -734,34 +701,6 @@ function renderWoW(headers,dataRows,pkrvData){
     <tr><td style="font-weight:700">Less: Borrowing Cost</td><td class="mono" style="color:var(--red)">(${fmtN(liabCost)})</td><td class="r">${L?getPct(v(L,iRT>=0?iRT:15)):'—'}</td><td class="muted">Weekly financing cost</td></tr>
     <tr style="border-top:2px solid var(--ink)"><td style="font-weight:700">Net Weekly Gain</td><td class="mono" style="color:${netGL>=0?'var(--green)':'var(--red)'};font-size:0.88rem"><strong>${fmtN(netGL)}</strong></td><td class="r"><strong>${netRate.toFixed(2)}%</strong></td><td class="muted">Net of all financing costs</td></tr>`;
 
-  // ── Return rates table ───────────────────────────────────────
-  let rb='';
-  positions.forEach(r=>{
-    const instr=r.__instr||String(r[1]||'').trim();
-    // These columns are all already stored as % values
-    const fP=k=>k>=0&&v(r,k)!==''?getPct(v(r,k)):'—';
-    rb+=`<tr>
-      <td style="font-weight:700">${instr}</td>
-      <td class="r">${getPct(v(r,iWY>=0?iWY:14))}</td>
-      <td class="r">${fP(iTX)}</td>
-      <td class="r">${fP(iGE)}</td>
-      <td class="r">${fP(iT3)}</td>
-      <td class="r">${fP(i1D)}</td>
-      <td class="r">${fP(i15)}</td>
-      <td class="r">${fP(i30)}</td>
-      <td class="r">${fP(i90)}</td>
-    </tr>`;
-  });
-  $('rate-tbody').innerHTML=rb;
-  if(T){
-    $('rate-tfoot').innerHTML=`<tr>
-      <td><strong>Portfolio Total</strong></td>
-      <td class="r"><strong>${getPct(v(T,iWY>=0?iWY:14))}</strong></td>
-      <td class="r">—</td><td class="r">—</td><td class="r">—</td>
-      <td class="r">—</td><td class="r">—</td><td class="r">—</td><td class="r">—</td>
-    </tr>`;
-  }
-
   // ── Risk metrics table ───────────────────────────────────────
   let rkb='',rkf='';
   positions.forEach(r=>{
@@ -863,17 +802,6 @@ function renderWoW(headers,dataRows,pkrvData){
     }]},
     options:{...CD,plugins:{...CD.plugins,legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.parsed.y.toFixed(2)+'%'}}},
       scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#f0ebe0'},ticks:{callback:vv=>vv.toFixed(1)+'%'},suggestedMin:9,suggestedMax:14}}}
-  });
-
-  // 5. Multi-period returns — multiply raw decimals by 100
-  dc('c-returns');charts['c-returns']=new Chart($('c-returns'),{
-    type:'bar',
-    data:{labels:positions.map(r=>sn(r.__instr||r[1])),datasets:[
-      {label:'1-Day', data:positions.map(r=>(parseNum(v(r,i1D))||0)*100),backgroundColor:'#1e6091',borderRadius:3,borderSkipped:false},
-      {label:'30-Day',data:positions.map(r=>(parseNum(v(r,i30))||0)*100),backgroundColor:'#1a6b28',borderRadius:3,borderSkipped:false},
-      {label:'90-Day',data:positions.map(r=>(parseNum(v(r,i90))||0)*100),backgroundColor:'#f9a825',borderRadius:3,borderSkipped:false}
-    ]},
-    options:{...CD,scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{beginAtZero:true,grid:{color:'#f0ebe0'},ticks:{callback:vv=>vv.toFixed(1)+'%'}}}}
   });
 
   // 6. Gain/Loss per instrument
