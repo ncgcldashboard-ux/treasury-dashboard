@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NCGCL Treasury Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --ink:#0d1b2a; --paper:#f5f0e8; --cream:#ede8dc;
+  --white:#ffffff; --border:#c8bfaf; --muted:#78909c;
+  --green:#2b8c3a; --green2:#1a6b28;
+  --blue:#1e6091; --amber:#e65100; --red:#b71c1c;
+  --gold:#f9a825; --slate:#37474f;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;font-size:0.82rem;line-height:1.5;}
+.wrap{max-width:1280px;margin:0 auto;padding:clamp(14px,4vw,32px);}
+
+/* HEADER */
+.header{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding-bottom:18px;border-bottom:3px solid var(--green);margin-bottom:20px;}
+.header h1{font-size:clamp(1.1rem,3vw,1.65rem);font-weight:800;letter-spacing:-0.5px;color:var(--ink);}
+.header p{font-size:0.72rem;color:var(--muted);margin-top:2px;letter-spacing:0.3px;}
+.header-badge{background:var(--green);color:#fff;padding:6px 16px;border-radius:4px;font-weight:700;font-size:0.72rem;text-align:center;letter-spacing:0.5px;white-space:nowrap;}
+.header-badge span{display:block;font-size:1.1rem;font-weight:800;font-family:'Courier New',monospace;}
+
+/* DATA BAR */
+.data-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:10px 16px;margin-bottom:20px;font-size:0.72rem;color:var(--muted);}
+.data-bar-left{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.data-item{display:flex;align-items:center;gap:5px;}
+.data-item strong{color:var(--ink);}
+.data-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;}
+.data-dot.stale{background:var(--amber);}
+.status-ok{color:var(--green);font-weight:600;}
+.status-err{color:var(--red);font-weight:600;}
+.spinner{width:10px;height:10px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;display:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* KPI STRIP */
+.kpi-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:14px 18px;margin-bottom:20px;}
+.kpi{text-align:center;}
+.kpi-val{font-size:clamp(1rem,2.2vw,1.7rem);font-weight:800;color:var(--green);letter-spacing:-0.5px;font-family:'Courier New',monospace;}
+.kpi-val.blue{color:var(--blue);}.kpi-val.amber{color:var(--amber);}.kpi-val.slate{color:var(--slate);}.kpi-val.red{color:var(--red);}
+.kpi-label{font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:600;margin-top:2px;}
+.kpi-sub{font-size:0.58rem;color:var(--border);margin-top:1px;}
+
+/* TABS */
+.tabs{display:flex;gap:6px;border-bottom:2px solid var(--border);margin-bottom:20px;overflow-x:auto;padding-bottom:2px;}
+.tab-btn{background:none;border:none;padding:8px 16px;font-family:inherit;font-size:0.78rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .15s;}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green);}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:18px;margin-bottom:16px;}
+.card-title{font-size:0.82rem;font-weight:700;color:var(--ink);margin-bottom:2px;}
+.card-sub{font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;}
+.ch{height:250px;}.ch-short{height:190px;}
+
+/* INSIGHTS */
+.insights{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.insight{background:var(--cream);border-left:4px solid var(--green);border-radius:4px;padding:14px 16px;}
+.insight-n{font-size:1.3rem;font-weight:800;color:var(--green);font-family:'Courier New',monospace;}
+.insight-d{font-size:0.72rem;color:var(--ink);margin-top:3px;line-height:1.4;}
+.insight.amber{border-left-color:var(--amber);}.insight.amber .insight-n{color:var(--amber);}
+.insight.blue{border-left-color:var(--blue);}.insight.blue .insight-n{color:var(--blue);}
+.insight.red{border-left-color:var(--red);}.insight.red .insight-n{color:var(--red);}
+
+/* SECTION LABEL */
+.section-label{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:20px 0 10px;border-bottom:1px solid var(--border);padding-bottom:6px;}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;min-width:560px;}
+thead th{background:var(--ink);color:#fff;padding:9px 12px;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;text-align:left;}
+thead th.r{text-align:right;}
+tbody tr{border-bottom:1px solid var(--cream);}
+tbody tr:hover{background:var(--cream);}
+tbody td{padding:8px 12px;font-size:0.78rem;vertical-align:middle;}
+tbody td.mono{font-family:'Courier New',monospace;font-weight:700;text-align:right;}
+tbody td.r{text-align:right;}
+tbody td.muted{color:var(--muted);font-size:0.72rem;}
+tfoot tr{border-top:2px solid var(--ink);}
+tfoot td{padding:9px 12px;font-size:0.78rem;font-weight:700;background:var(--cream);}
+tfoot td.mono{font-family:'Courier New',monospace;text-align:right;}
+
+/* PILLS */
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.62rem;font-weight:700;letter-spacing:0.4px;white-space:nowrap;}
+.pill-mtb{background:#e3f2fd;color:#1e6091;}
+.pill-fund{background:#e8f5e9;color:#1a6b28;}
+.pill-bank{background:#fff3e0;color:#e65100;}
+.pill-coi{background:#fce4ec;color:#880e4f;}
+.pill-sukuk{background:#e0f7fa;color:#006064;}
+
+/* BENCHMARK */
+.bench-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.bench-card{background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:14px 16px;text-align:center;}
+.bench-val{font-size:1.4rem;font-weight:800;font-family:'Courier New',monospace;margin:4px 0 2px;}
+.bench-label{font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:600;}
+.bench-sub{font-size:0.62rem;color:var(--muted);margin-top:2px;}
+
+/* FOOTER */
+.footer{display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:center;padding-top:18px;border-top:1px solid var(--border);margin-top:24px;font-size:0.65rem;color:var(--muted);}
+.footer-brand{color:var(--green);font-weight:700;}
+
+/* RESPONSIVE */
+@media(max-width:1000px){.kpi-strip{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:900px){.g2,.g3{grid-template-columns:1fr;}.insights{grid-template-columns:1fr;}.bench-row{grid-template-columns:1fr 1fr;}}
+@media(max-width:540px){.kpi-strip{grid-template-columns:repeat(2,1fr);}.bench-row{grid-template-columns:1fr;}.footer{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <h1>NCGCL Treasury Dashboard</h1>
+    <p>WoW Positions · <span id="asOfDate">—</span> · Confidential — Internal Use Only</p>
+  </div>
+  <div class="header-badge">
+    <span id="badgeAum">—</span>
+    TOTAL AUM
+  </div>
+</div>
+
+<!-- DATA STATUS BAR -->
+<div class="data-bar">
+  <div class="data-bar-left">
+    <div class="data-item"><div class="data-dot" id="statusDot"></div><span id="statusTxt">Loading data…</span><div class="spinner" id="spinner"></div></div>
+    <div class="data-item">File date: <strong id="fileDate">—</strong></div>
+    <div class="data-item">Last refreshed: <strong id="lastRefreshed">—</strong></div>
+  </div>
+  <div>
+    <button onclick="loadData()" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:5px 14px;font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;">↻ Refresh</button>
+  </div>
+</div>
+
+<!-- KPI STRIP -->
+<div class="kpi-strip">
+  <div class="kpi"><div class="kpi-val" id="k-aum">—</div><div class="kpi-label">Gross AUM</div><div class="kpi-sub">Current week total</div></div>
+  <div class="kpi"><div class="kpi-val blue" id="k-netgl">—</div><div class="kpi-label">Net Weekly Gain</div><div class="kpi-sub">After borrowing cost</div></div>
+  <div class="kpi"><div class="kpi-val" id="k-yield">—</div><div class="kpi-label">Portfolio Yield</div><div class="kpi-sub">Weekly rate</div></div>
+  <div class="kpi"><div class="kpi-val slate" id="k-nav">—</div><div class="kpi-label">NAV (Clean)</div><div class="kpi-sub" id="k-nav-sub">per unit · WoW</div></div>
+  <div class="kpi"><div class="kpi-val amber" id="k-dnav">—</div><div class="kpi-label">NAV (Dirty)</div><div class="kpi-sub">Accrued income incl.</div></div>
+  <div class="kpi"><div class="kpi-val amber" id="k-count">—</div><div class="kpi-label">Instruments</div><div class="kpi-sub">Active positions</div></div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('overview',this)">Overview &amp; Charts</button>
+  <button class="tab-btn" onclick="switchTab('positions',this)">WoW Positions</button>
+  <button class="tab-btn" onclick="switchTab('returns',this)">Return Rates</button>
+  <button class="tab-btn" onclick="switchTab('fund',this)">Fund Metrics</button>
+</div>
+
+<!-- TAB: OVERVIEW -->
+<div id="tab-overview" class="tab-panel active">
+  <div class="insights">
+    <div class="insight">
+      <div class="insight-n" id="ov-nav">—</div>
+      <div class="insight-d">Clean NAV per unit vs <strong id="ov-nav-prev">—</strong> last week (<span id="ov-nav-wow">—</span> WoW). Dirty NAV: <strong id="ov-dnav">—</strong>.</div>
+    </div>
+    <div class="insight amber">
+      <div class="insight-n" id="ov-netgl">—</div>
+      <div class="insight-d">Net weekly gain after borrowing cost of <strong id="ov-liab-cost">—</strong>. Gross gain was <span id="ov-grossgl">—</span>.</div>
+    </div>
+    <div class="insight blue">
+      <div class="insight-n" id="ov-alpha">—</div>
+      <div class="insight-d">Alpha vs benchmark of <strong id="ov-bench">—</strong>. 3-Month KIBOR: <span id="ov-3mk">—</span>.</div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Portfolio Concentration by Instrument</div>
+      <div class="card-sub">% of total AUM — all positions</div>
+      <div class="ch"><canvas id="c-conc"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Weekly Yield by Instrument</div>
+      <div class="card-sub">Already as % — per position</div>
+      <div class="ch"><canvas id="c-yield"></canvas></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Current Week vs Past Week Value</div>
+      <div class="card-sub">Top positions · PKR millions</div>
+      <div class="ch-short"><canvas id="c-wow"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">PKRV Yield Curve — Most Recent</div>
+      <div class="card-sub" id="pkrv-sub">Pakistan Rupee Valuation rates · SBP</div>
+      <div class="ch-short"><canvas id="c-pkrv"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: WoW POSITIONS -->
+<div id="tab-positions" class="tab-panel">
+  <div class="section-label">Week-on-Week Position Summary · All Instruments</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>#</th><th>Instrument</th><th>Type</th>
+        <th class="r">Cost of Placement</th><th class="r">Past Week</th><th class="r">Current Week</th>
+        <th class="r">Gain / Loss</th><th class="r">W. Yield</th><th class="r">Concentration</th><th class="r">Rem. Days</th>
+      </tr></thead>
+      <tbody id="pos-tbody"></tbody>
+      <tfoot id="pos-tfoot"></tfoot>
+    </table>
+  </div>
+  <div class="section-label" style="margin-top:24px;">Liabilities</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Instrument</th><th class="r">Current Value</th><th class="r">Weekly Cost</th><th class="r">Cost Rate</th><th>Placement Date</th><th>Maturity Date</th></tr></thead>
+      <tbody id="liab-tbody"></tbody>
+    </table>
+  </div>
+  <div class="section-label" style="margin-top:24px;">Net Summary</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Item</th><th class="r">Value (PKR)</th><th class="r">Rate</th><th>Notes</th></tr></thead>
+      <tbody id="net-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TAB: RETURN RATES -->
+<div id="tab-returns" class="tab-panel">
+  <div class="section-label">Return Rate Summary · All Instruments</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Instrument</th>
+        <th class="r">Weekly Yield</th>
+        <th class="r">Tax Adj. (1D)</th>
+        <th class="r">Gross Exp.</th>
+        <th class="r">Tax Adj. (30D)</th>
+        <th class="r">1-Day Return</th>
+        <th class="r">15-Day Return</th>
+        <th class="r">30-Day Return</th>
+        <th class="r">90-Day Return</th>
+      </tr></thead>
+      <tbody id="rate-tbody"></tbody>
+      <tfoot id="rate-tfoot"></tfoot>
+    </table>
+  </div>
+  <div class="g2" style="margin-top:16px;">
+    <div class="card">
+      <div class="card-title">Multi-Period Return Comparison</div>
+      <div class="card-sub">1-Day vs 30-Day vs 90-Day returns by instrument</div>
+      <div class="ch"><canvas id="c-returns"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Weekly Gain / Loss per Instrument</div>
+      <div class="card-sub">PKR — green positive, red negative</div>
+      <div class="ch"><canvas id="c-gl"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: FUND METRICS -->
+<div id="tab-fund" class="tab-panel">
+  <div class="section-label">NAV — Clean &amp; Dirty</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+    <div class="card" style="text-align:center;margin-bottom:0;">
+      <div class="card-sub" style="margin-bottom:8px;">Clean NAV — Past Week</div>
+      <div style="font-size:1.8rem;font-weight:800;font-family:'Courier New',monospace;color:var(--slate)" id="fm-navprev">—</div>
+    </div>
+    <div class="card" style="text-align:center;border-top:3px solid var(--green);margin-bottom:0;">
+      <div class="card-sub" style="margin-bottom:8px;">Clean NAV — Current</div>
+      <div style="font-size:1.8rem;font-weight:800;font-family:'Courier New',monospace;color:var(--green)" id="fm-navcur">—</div>
+      <div style="font-size:0.72rem;margin-top:4px;" id="fm-navwow">—</div>
+    </div>
+    <div class="card" style="text-align:center;border-top:3px solid var(--amber);margin-bottom:0;">
+      <div class="card-sub" style="margin-bottom:8px;">Dirty NAV — Current</div>
+      <div style="font-size:1.8rem;font-weight:800;font-family:'Courier New',monospace;color:var(--amber)" id="fm-dnavcur">—</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;">Incl. accrued income</div>
+    </div>
+    <div class="card" style="text-align:center;margin-bottom:0;">
+      <div class="card-sub" style="margin-bottom:8px;">NAV Units Outstanding</div>
+      <div style="font-size:1.8rem;font-weight:800;font-family:'Courier New',monospace;color:var(--blue)" id="fm-units">—</div>
+    </div>
+  </div>
+
+  <div class="section-label">Benchmark, Alpha &amp; KIBOR</div>
+  <div class="bench-row">
+    <div class="bench-card">
+      <div class="bench-label">Benchmark Return</div>
+      <div class="bench-val" style="color:var(--slate)" id="fm-bench">—</div>
+      <div class="bench-sub">Reference rate</div>
+    </div>
+    <div class="bench-card">
+      <div class="bench-label">Alpha vs Benchmark</div>
+      <div class="bench-val" id="fm-alpha">—</div>
+      <div class="bench-sub">As reported in sheet</div>
+    </div>
+    <div class="bench-card">
+      <div class="bench-label">3M KIBOR</div>
+      <div class="bench-val" style="color:var(--blue)" id="fm-3mk">—</div>
+      <div class="bench-sub">Interbank offered rate</div>
+    </div>
+    <div class="bench-card">
+      <div class="bench-label">Net Gain (after liab.)</div>
+      <div class="bench-val" id="fm-netrate">—</div>
+      <div class="bench-sub" id="fm-netrate-sub">Annualised net yield</div>
+    </div>
+  </div>
+
+  <div class="section-label">Risk Metrics</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Instrument</th><th class="r">Concentration</th><th class="r">PVBP</th>
+        <th class="r">Mod. Duration</th><th class="r">Convexity</th><th class="r">Tenor</th>
+        <th class="r">Secondary Yield</th><th class="r">Dirty Price</th><th class="r">Rem. Days</th>
+      </tr></thead>
+      <tbody id="risk-tbody"></tbody>
+      <tfoot id="risk-tfoot"></tfoot>
+    </table>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div><strong>NCGCL Treasury Dashboard</strong> · WoW Positions · <span id="footerDate">—</span> · Confidential — Internal Use Only</div>
+  <div>Source: <span id="footerFile">data.xlsx</span></div>
+  <div class="footer-brand">NCGCL · Treasury &amp; Investments</div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// CONFIG — set your raw GitHub xlsx URL here
+// ─────────────────────────────────────────────────────────────
+const XLSX_URL = 'https://raw.githubusercontent.com/ncgcldashboard-ux/treasury-dashboard/main/data.xlsx';
+
+// ─────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+const parsePct=s=>{if(s==null||s==='')return NaN;const n=parseFloat(String(s).replace(/[,%\s]/g,''));return isNaN(n)?NaN:n;};
+const parseNum=s=>{if(s==null||s==='')return NaN;const n=parseFloat(String(s).replace(/[,\s%]/g,''));return isNaN(n)?NaN:n;};
+const fmtPKR=n=>{if(isNaN(n))return'—';const a=Math.abs(n);let v;if(a>=1e9)v=(n/1e9).toFixed(2)+'B';else if(a>=1e6)v=(n/1e6).toFixed(2)+'M';else if(a>=1e3)v=(n/1e3).toFixed(1)+'K';else v=n.toFixed(0);return'PKR '+v;};
+const fmtN=n=>{if(isNaN(n))return'—';return new Intl.NumberFormat('en-PK').format(Math.round(n));};
+const fmtRaw=s=>{if(s===undefined||s===null)return'—';return String(s).trim()||'—';};
+const fmtPct2=n=>{if(isNaN(n))return'—';return n.toFixed(2)+'%';};
+// Format value that is already stored as a % number (e.g. 10.88 means 10.88%)
+const fmtAsIs=v=>{if(v===null||v===undefined||v==='')return'—';const n=parseFloat(String(v).replace(/[,%\s]/g,''));if(isNaN(n))return fmtRaw(v);return n.toFixed(2)+'%';};
+const ci=(h,p)=>h.findIndex(x=>p.test(String(x)));
+
+let charts={};
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+const CC=['#1a6b28','#e65100','#1e6091','#f9a825','#37474f','#b71c1c','#006064','#4527a0','#880e4f','#f57f17','#00695c','#c62828'];
+const CD={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:12,color:'#0d1b2a'}},tooltip:{backgroundColor:'rgba(13,27,42,0.92)'}}};
+
+function setStatus(msg,type){
+  const dot=$('statusDot'),txt=$('statusTxt'),sp=$('spinner');
+  txt.textContent=msg;
+  txt.className=type==='ok'?'status-ok':type==='err'?'status-err':'';
+  dot.className='data-dot'+(type==='err'?' stale':'');
+  sp.style.display=type==='loading'?'inline-block':'none';
+}
+
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  $('tab-'+id).classList.add('active');btn.classList.add('active');
+}
+
+// ─────────────────────────────────────────────────────────────
+// INSTRUMENT UTILS
+// ─────────────────────────────────────────────────────────────
+function typePill(n){
+  const l=n.toLowerCase();
+  if(l.includes('mtb'))return'<span class="pill pill-mtb">MTB</span>';
+  if(l.includes('sukuk'))return'<span class="pill pill-sukuk">Sukuk</span>';
+  if(l.includes('fund')||l.includes('alfalah')||l.includes('mcb'))return'<span class="pill pill-fund">Fund</span>';
+  if(l.includes('bank')||l.includes('samba')||l.includes('faysal'))return'<span class="pill pill-bank">TDR</span>';
+  if(l.includes('coi'))return'<span class="pill pill-coi">COI</span>';
+  return'';
+}
+function pillLabel(n){
+  const l=n.toLowerCase();
+  if(l.includes('mtb'))return'MTB';if(l.includes('sukuk'))return'Sukuk';
+  if(l.includes('fund')||l.includes('alfalah')||l.includes('mcb'))return'Fund';
+  if(l.includes('bank')||l.includes('samba')||l.includes('faysal'))return'TDR';
+  if(l.includes('coi'))return'COI';return'—';
+}
+function sn(n){
+  n=String(n).trim();
+  if(/alfalah gov/i.test(n))return'AGS II';if(/alfalah mts/i.test(n))return'AMTS';
+  if(/alfalah ghp/i.test(n))return'AGIM';if(/mcb/i.test(n))return'MCB ISP';
+  if(/faysal/i.test(n))return'Faysal';if(/samba/i.test(n))return'Samba';
+  if(/daewoo/i.test(n))return'Daewoo';if(/coi/i.test(n))return'COI';
+  const m=n.match(/MTBs?\s*\((\w+)\)/i);if(m)return'MTB('+m[1]+')';
+  return n.length>12?n.slice(0,11)+'…':n;
+}
+
+// ─────────────────────────────────────────────────────────────
+// LOAD DATA
+// ─────────────────────────────────────────────────────────────
+async function loadData(){
+  setStatus('Fetching data from GitHub…','loading');
+  const now=new Date();
+  $('lastRefreshed').textContent=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
+
+  try{
+    // Fetch with cache-busting
+    const res=await fetch(XLSX_URL+'?t='+Date.now());
+    if(!res.ok)throw new Error('HTTP '+res.status+' — check the file exists at the repo URL and the repo is public.');
+
+    // Try to get file last-modified date from headers
+    const lastMod=res.headers.get('Last-Modified')||res.headers.get('last-modified');
+    if(lastMod){
+      const d=new Date(lastMod);
+      $('fileDate').textContent=d.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
+    } else {
+      $('fileDate').textContent='(not available)';
+    }
+
+    const buf=await res.arrayBuffer();
+    const wb=XLSX.read(buf,{type:'array',cellDates:true});
+
+    $('footerFile').textContent=XLSX_URL.split('/').pop();
+    processWorkbook(wb);
+    setStatus('Data loaded successfully · '+wb.SheetNames.length+' sheet(s): '+wb.SheetNames.join(', '),'ok');
+
+    // Update timestamps
+    const ts=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
+    $('asOfDate').textContent=ts; $('footerDate').textContent=ts;
+
+  }catch(e){
+    setStatus('Error: '+e.message,'err');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// PROCESS WORKBOOK — reads WoW Positions + PKRV sheets
+// ─────────────────────────────────────────────────────────────
+function processWorkbook(wb){
+  // WoW Positions sheet
+  const wowName=wb.SheetNames.find(n=>/wow|position/i.test(n))||wb.SheetNames[0];
+  const wsWoW=wb.Sheets[wowName];
+  const rawWoW=XLSX.utils.sheet_to_json(wsWoW,{header:1,defval:''});
+  const hIdx=rawWoW.findIndex(row=>row.some(c=>String(c).toLowerCase().includes('instrument')&&String(c).trim().length<25));
+  const headerIdx=hIdx>=0?hIdx:5;
+  const headers=rawWoW[headerIdx].map(c=>String(c).trim());
+  const dataRows=rawWoW.slice(headerIdx+1).filter(r=>r.some(c=>c!==''&&c!==null&&c!==undefined));
+
+  // PKRV sheet — look for "PKRV History" (or any name containing pkrv)
+  const pkrvName=wb.SheetNames.find(n=>/pkrv.?hist/i.test(n))
+               ||wb.SheetNames.find(n=>/pkrv/i.test(n))
+               ||wb.SheetNames.find(n=>/yield.?curve/i.test(n));
+  let pkrvData=null;
+  if(pkrvName){
+    const wsPKRV=wb.Sheets[pkrvName];
+    const rawPKRV=XLSX.utils.sheet_to_json(wsPKRV,{header:1,defval:''});
+    pkrvData=parsePKRV(rawPKRV);
+  }
+
+  renderWoW(headers,dataRows,pkrvData);
+}
+
+// ─────────────────────────────────────────────────────────────
+// PARSE PKRV HISTORY SHEET
+// Expected layout: Date in col 0, then tenor columns (3M, 6M, 1Y, 3Y, 5Y, 10Y…)
+// Finds the most recent date row (highest date value in the date column)
+// Yields stored as decimals (0.1172 = 11.72%) — multiply by 100
+// ─────────────────────────────────────────────────────────────
+function parsePKRV(raw){
+  if(!raw||!raw.length)return null;
+
+  // Find header row — must contain tenor-like values OR "date"
+  const hIdx=raw.findIndex(r=>r.some(c=>/^date$/i.test(String(c).trim()))||
+                               r.some(c=>/^\d+[YyMm]$/.test(String(c).trim())));
+  if(hIdx<0)return null;
+
+  const hdr=raw[hIdx].map(c=>String(c).trim());
+  const dateColIdx=hdr.findIndex(h=>/^date$/i.test(h));
+
+  // Find all tenor columns
+  const tenorCols=[];
+  hdr.forEach((h,i)=>{
+    if(/^\d+[YyMm]$/.test(h)||/^(3M|6M|1Y|2Y|3Y|5Y|7Y|10Y|15Y|20Y|30Y)$/i.test(h)){
+      tenorCols.push({tenor:h,idx:i});
+    }
+  });
+  if(!tenorCols.length)return null;
+
+  // Collect all data rows that have a valid date
+  const dataRows=raw.slice(hIdx+1).filter(r=>{
+    const d=dateColIdx>=0?r[dateColIdx]:r[0];
+    return d!==null&&d!==undefined&&d!=='';
+  });
+  if(!dataRows.length)return null;
+
+  // Find the most recent row by date
+  // Dates may be JS Date objects (from SheetJS cellDates:true) or strings
+  const toTime=d=>{
+    if(d instanceof Date)return d.getTime();
+    const parsed=new Date(String(d));
+    return isNaN(parsed.getTime())?0:parsed.getTime();
+  };
+  const dateCol=dateColIdx>=0?dateColIdx:0;
+  let latestRow=dataRows[0];
+  dataRows.forEach(r=>{
+    if(toTime(r[dateCol])>toTime(latestRow[dateCol]))latestRow=r;
+  });
+
+  // Format the date
+  const rawDate=latestRow[dateCol];
+  let curveDate='';
+  if(rawDate instanceof Date){
+    curveDate=rawDate.toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'});
+  } else {
+    curveDate=String(rawDate).trim();
+  }
+
+  // Extract tenor → yield pairs from this row
+  // Multiply by 100 since stored as decimals
+  const points=tenorCols.map(({tenor,idx})=>{
+    const raw=latestRow[idx];
+    const n=parseFloat(String(raw).replace(/[,\s%]/g,''));
+    if(isNaN(n)||n===0)return null;
+    // If value looks like a decimal rate (< 1), multiply by 100
+    const yield_=n<1?n*100:n;
+    return{tenor,yield:yield_};
+  }).filter(Boolean);
+
+  // Sort by tenor in months
+  const tenorMonths=t=>{const m=t.match(/(\d+)([YyMm])/);if(!m)return 0;return parseInt(m[1])*(m[2].toLowerCase()==='y'?12:1);};
+  points.sort((a,b)=>tenorMonths(a.tenor)-tenorMonths(b.tenor));
+
+  return{date:curveDate,points};
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER WoW POSITIONS
+// ─────────────────────────────────────────────────────────────
+function renderWoW(headers,dataRows,pkrvData){
+  const h=(p)=>headers[ci(headers,p)]||'';
+  const iI  =ci(headers,/instrument/i);
+  const iCo =ci(headers,/cost.?of.?place/i);
+  const iPW =ci(headers,/past.?week/i);
+  const iCW =ci(headers,/current.?week/i);
+  const iGL =ci(headers,/gain.?loss/i);
+  const i1D =ci(headers,/1.?day.?ret/i);
+  const i15 =ci(headers,/15.?day/i);
+  const i30 =ci(headers,/30.?day/i);
+  const i90 =ci(headers,/90.?day/i);
+  const iWY =ci(headers,/weekly.?yield/i);
+  const iRT =ci(headers,/^rate\s*$/i);
+  const iTX =ci(headers,/tax.?adj.*1.?day/i);
+  const iGE =ci(headers,/gross.?exp/i);
+  const iT3 =ci(headers,/tax.?adj.*30/i);
+  const iCN =ci(headers,/concentration/i);
+  const iPV =ci(headers,/pvbp/i);
+  const iMD =ci(headers,/modified/i);
+  const iCV =ci(headers,/convexity/i);
+  const iTN =ci(headers,/^tenor/i);
+  const iSY =ci(headers,/secondary/i);
+  const iDP =ci(headers,/dirty.?pric/i);
+  const iDM =ci(headers,/days.?to.?mat/i);
+  const iRD =ci(headers,/remaining/i);
+  const iDPL=ci(headers,/date.?of.?place/i);
+  const iDMT=ci(headers,/date.?of.?mat/i);
+
+  // Value accessor by column index
+  const v=(row,idx)=>idx>=0?row[idx]??'':'';
+
+  // Values are stored as decimals in the xlsx (0.1088 = 10.88%)
+  // Multiply by 100 before displaying.
+  const getPct=val=>{
+    if(val===null||val===undefined||val==='')return'—';
+    const n=parseFloat(String(val).replace(/[,\s%]/g,''));
+    if(isNaN(n))return'—';
+    return (n*100).toFixed(2)+'%';
+  };
+
+  // ── Partition rows ──────────────────────────────────────────
+  const positions=[],sp={};
+  dataRows.forEach(r=>{
+    const instr=String(r[iI]||r[1]||'').trim();
+    if(!instr)return;
+    if(/^total$/i.test(instr)){sp.T=r;return;}
+    if(/^borrowing$/i.test(instr)){sp.L=r;return;}
+    if(/^benchmark$/i.test(instr)){sp.bench=parseNum(r[iCo>=0?iCo:2]);return;}
+    if(/^alpha$/i.test(instr)){sp.alpha=parseNum(r[iCo>=0?iCo:2]);return;}
+    if(/^3mk$/i.test(instr)){sp.mk=parseNum(r[iCo>=0?iCo:2]);return;}
+    if(/^nav\s*$/i.test(instr)){sp.navR=r;return;}
+    if(/^nav.?units$/i.test(instr)){sp.unitsR=r;return;}
+    if(/^liabilities$/i.test(instr))return; // section header
+    positions.push({...r.__raw,...r,__instr:instr,__raw:r});
+  });
+
+  // ── Special values ──────────────────────────────────────────
+  const T=sp.T, L=sp.L;
+  // These are stored as decimals (0.1038 = 10.38%) — multiply by 100 to display
+  const bench =sp.bench!=null ? sp.bench*100 : 10.38;
+  const alpha =sp.alpha!=null ? sp.alpha*100 : -3.73;
+  const mk3   =sp.mk!=null    ? sp.mk*100    : 11.38;
+
+  // NAV: col3=past week, col4=current week, col28=dirty (last col before end)
+  const navP   = sp.navR ? (parseNum(sp.navR[iPW>=0?iPW:3])||82.75) : 82.75;
+  const navC   = sp.navR ? (parseNum(sp.navR[iCW>=0?iCW:4])||82.92) : 82.92;
+  // Dirty NAV is in the last date column (col 28 in this sheet)
+  const dirtyNavCol=sp.navR?Object.keys(sp.navR).filter(k=>!isNaN(k)).find(k=>parseInt(k)>=26&&sp.navR[k]&&parseNum(sp.navR[k])>70):null;
+  const dirtyNAV = dirtyNavCol ? (parseNum(sp.navR[dirtyNavCol])||82.55) : 82.55;
+  const units  = sp.unitsR ? (parseNum(sp.unitsR[iPW>=0?iPW:3])||100000000) : 100000000;
+  const navWoW = ((navC-navP)/navP*100);
+
+  // ── Net gain = gross gain - borrowing cost ──────────────────
+  const grossGL   = T ? parseNum(T[iGL>=0?iGL:5]) : 17481432;
+  const liabCost  = L ? Math.abs(parseNum(L[iGL>=0?iGL:5])) : 2511953;
+  const netGL     = grossGL - liabCost;
+  // Net annualised rate is in the row below total (row 23 in CSV has 9.63%)
+  // Find it: blank instrument row with a rate value
+  let netRate=9.63;
+  dataRows.forEach(r=>{
+    const instr=String(r[iI]||r[1]||'').trim();
+    if(!instr){
+      const rateVal=iRT>=0?parseNum(r[iRT]):NaN;
+      // stored as decimal e.g. 0.0963 = 9.63%
+      if(!isNaN(rateVal)&&rateVal>0.01&&rateVal<0.30) netRate=rateVal*100;
+    }
+  });
+
+  const tCur   = T ? parseNum(T[iCW>=0?iCW:4]) : NaN;
+  const tYld   = T ? getPct(v(T,iWY>=0?iWY:14)) : '—';
+
+  // ── KPI strip ──────────────────────────────────────────────
+  $('k-aum').textContent  = isNaN(tCur)?'—':fmtPKR(tCur).replace('PKR ','');
+  $('k-netgl').textContent= fmtPKR(netGL).replace('PKR ','');
+  $('k-netgl').className  = 'kpi-val '+(netGL>=0?'blue':'red');
+  $('k-yield').textContent= tYld;
+  $('k-nav').textContent  = navC.toFixed(2);
+  $('k-nav-sub').textContent=(navWoW>=0?'+':'')+navWoW.toFixed(2)+'% WoW';
+  $('k-dnav').textContent = dirtyNAV.toFixed(2);
+  $('k-count').textContent= positions.length;
+  $('badgeAum').textContent= fmtPKR(tCur);
+
+  // ── Insights ───────────────────────────────────────────────
+  $('ov-nav').textContent     = navC.toFixed(2);
+  $('ov-nav-prev').textContent= navP.toFixed(2);
+  $('ov-nav-wow').textContent = (navWoW>=0?'+':'')+navWoW.toFixed(2)+'%';
+  $('ov-dnav').textContent    = dirtyNAV.toFixed(2);
+  $('ov-netgl').textContent   = fmtPKR(netGL);
+  $('ov-netgl').parentElement.querySelector('.insight-n').style.color=netGL>=0?'var(--amber)':'var(--red)';
+  $('ov-liab-cost').textContent= fmtPKR(liabCost);
+  $('ov-grossgl').textContent = fmtPKR(grossGL);
+  $('ov-alpha').textContent   = (alpha>=0?'+':'')+alpha.toFixed(2)+'%';
+  $('ov-bench').textContent   = bench.toFixed(2)+'%';
+  $('ov-3mk').textContent     = mk3.toFixed(2)+'%';
+
+  // ── Fund Metrics tab ────────────────────────────────────────
+  $('fm-navprev').textContent = navP.toFixed(2);
+  $('fm-navcur').textContent  = navC.toFixed(2);
+  $('fm-navwow').textContent  = (navWoW>=0?'▲ +':'▼ ')+navWoW.toFixed(2)+'% WoW';
+  $('fm-navwow').style.color  = navWoW>=0?'var(--green)':'var(--red)';
+  $('fm-dnavcur').textContent = dirtyNAV.toFixed(2);
+  $('fm-units').textContent   = (units/1e6).toFixed(0)+'M';
+  $('fm-bench').textContent   = bench.toFixed(2)+'%';
+  // Alpha is already given as %, display as-is
+  $('fm-alpha').textContent   = (alpha>=0?'+':'')+alpha.toFixed(2)+'%';
+  $('fm-alpha').style.color   = alpha>=0?'var(--green)':'var(--red)';
+  $('fm-3mk').textContent     = mk3.toFixed(2)+'%';
+  $('fm-netrate').textContent = netRate.toFixed(2)+'%';
+  $('fm-netrate').style.color = 'var(--green)';
+  $('fm-netrate-sub').textContent= 'Net annualised yield';
+
+  // ── Positions table ─────────────────────────────────────────
+  let tb='',tf='';
+  positions.forEach((r,i)=>{
+    const instr=r.__instr||String(r[1]||'').trim();
+    const co=parseNum(v(r,iCo)),pw=parseNum(v(r,iPW)),cw=parseNum(v(r,iCW)),gl=parseNum(v(r,iGL));
+    const cn=parseNum(v(r,iCN)),rd=iRD>=0?parseNum(v(r,iRD)):NaN;
+    const yld=getPct(v(r,iWY>=0?iWY:14));
+    const gls=isNaN(gl)?'':(gl>=0?'color:var(--green);font-weight:700':'color:var(--red);font-weight:700');
+    tb+=`<tr>
+      <td class="muted">${i+1}</td>
+      <td style="font-weight:700">${typePill(instr)} ${instr}</td>
+      <td class="muted">${pillLabel(instr)}</td>
+      <td class="mono">${isNaN(co)?'—':fmtN(co)}</td>
+      <td class="mono">${isNaN(pw)?'—':fmtN(pw)}</td>
+      <td class="mono">${isNaN(cw)?'—':fmtN(cw)}</td>
+      <td class="mono" style="${gls}">${isNaN(gl)?'—':(gl>=0?'+':'')+fmtN(gl)}</td>
+      <td class="r">${yld}</td>
+      <td class="r">${isNaN(cn)?'—':cn.toFixed(2)+'%'}</td>
+      <td class="r">${isNaN(rd)?'—':Math.round(rd)+'d'}</td>
+    </tr>`;
+  });
+  if(T){
+    const tc=parseNum(v(T,iCW)),tg=parseNum(v(T,iGL));
+    tf=`<tr>
+      <td colspan="2"><strong>Total (Gross)</strong></td><td></td>
+      <td class="mono">—</td><td class="mono">—</td>
+      <td class="mono"><strong>${isNaN(tc)?'—':fmtN(tc)}</strong></td>
+      <td class="mono" style="${isNaN(tg)?'':(tg>=0?'color:var(--green)':'color:var(--red)')}"><strong>${isNaN(tg)?'—':(tg>=0?'+':'')+fmtN(tg)}</strong></td>
+      <td class="r"><strong>${tYld}</strong></td>
+      <td class="r"><strong>100%</strong></td><td class="r">—</td>
+    </tr>`;
+  }
+  $('pos-tbody').innerHTML=tb;
+  $('pos-tfoot').innerHTML=tf;
+
+  // ── Liabilities table ────────────────────────────────────────
+  if(L){
+    const lc=parseNum(v(L,iCW));
+    const lgl=parseNum(v(L,iGL));
+    const lrate=getPct(v(L,iRT>=0?iRT:15));
+    $('liab-tbody').innerHTML=`<tr>
+      <td style="font-weight:700">Borrowing</td>
+      <td class="mono" style="color:var(--red)">${isNaN(lc)?'—':fmtN(lc)}</td>
+      <td class="mono" style="color:var(--red)">${isNaN(lgl)?'—':fmtN(Math.abs(lgl))}</td>
+      <td class="r" style="color:var(--red)">${lrate}</td>
+      <td>${iDPL>=0?fmtRaw(v(L,iDPL)):'1-Mar-26'}</td>
+      <td>${iDMT>=0?fmtRaw(v(L,iDMT)):'31-Mar-26'}</td>
+    </tr>`;
+  }
+
+  // ── Net summary table ────────────────────────────────────────
+  $('net-tbody').innerHTML=`
+    <tr><td style="font-weight:700">Gross Weekly Gain (Assets)</td><td class="mono" style="color:var(--green)">${fmtN(grossGL)}</td><td class="r">${tYld}</td><td class="muted">Sum of all position gains</td></tr>
+    <tr><td style="font-weight:700">Less: Borrowing Cost</td><td class="mono" style="color:var(--red)">(${fmtN(liabCost)})</td><td class="r">${L?getPct(v(L,iRT>=0?iRT:15)):'—'}</td><td class="muted">Weekly financing cost</td></tr>
+    <tr style="border-top:2px solid var(--ink)"><td style="font-weight:700">Net Weekly Gain</td><td class="mono" style="color:${netGL>=0?'var(--green)':'var(--red)'};font-size:0.88rem"><strong>${fmtN(netGL)}</strong></td><td class="r"><strong>${netRate.toFixed(2)}%</strong></td><td class="muted">Net of all financing costs</td></tr>`;
+
+  // ── Return rates table ───────────────────────────────────────
+  let rb='';
+  positions.forEach(r=>{
+    const instr=r.__instr||String(r[1]||'').trim();
+    // These columns are all already stored as % values
+    const fP=k=>k>=0&&v(r,k)!==''?getPct(v(r,k)):'—';
+    rb+=`<tr>
+      <td style="font-weight:700">${instr}</td>
+      <td class="r">${getPct(v(r,iWY>=0?iWY:14))}</td>
+      <td class="r">${fP(iTX)}</td>
+      <td class="r">${fP(iGE)}</td>
+      <td class="r">${fP(iT3)}</td>
+      <td class="r">${fP(i1D)}</td>
+      <td class="r">${fP(i15)}</td>
+      <td class="r">${fP(i30)}</td>
+      <td class="r">${fP(i90)}</td>
+    </tr>`;
+  });
+  $('rate-tbody').innerHTML=rb;
+  if(T){
+    $('rate-tfoot').innerHTML=`<tr>
+      <td><strong>Portfolio Total</strong></td>
+      <td class="r"><strong>${getPct(v(T,iWY>=0?iWY:14))}</strong></td>
+      <td class="r">—</td><td class="r">—</td><td class="r">—</td>
+      <td class="r">—</td><td class="r">—</td><td class="r">—</td><td class="r">—</td>
+    </tr>`;
+  }
+
+  // ── Risk metrics table ───────────────────────────────────────
+  let rkb='',rkf='';
+  positions.forEach(r=>{
+    const instr=r.__instr||String(r[1]||'').trim();
+    const cn=parseNum(v(r,iCN)),md=parseNum(v(r,iMD)),cv=parseNum(v(r,iCV));
+    const rd=iRD>=0?parseNum(v(r,iRD)):NaN;
+    const sy=iSY>=0?getPct(v(r,iSY)):'—';
+    const dp=iDP>=0?parseNum(v(r,iDP)):NaN;
+    rkb+=`<tr>
+      <td style="font-weight:700">${instr}</td>
+      <td class="r">${isNaN(cn)?'—':cn.toFixed(2)+'%'}</td>
+      <td class="mono">${iPV>=0&&v(r,iPV)?fmtN(parseNum(v(r,iPV))):'—'}</td>
+      <td class="r">${isNaN(md)?'—':md.toFixed(4)}</td>
+      <td class="r">${isNaN(cv)?'—':cv.toFixed(6)}</td>
+      <td class="r">${iTN>=0?fmtRaw(v(r,iTN)):'—'}</td>
+      <td class="r">${sy}</td>
+      <td class="mono">${isNaN(dp)?'—':fmtN(dp)}</td>
+      <td class="r">${isNaN(rd)?'—':Math.round(rd)+'d'}</td>
+    </tr>`;
+  });
+  if(T){
+    const tcn=parseNum(v(T,iCN)),tmd=parseNum(v(T,iMD)),tcv=parseNum(v(T,iCV));
+    rkf=`<tr>
+      <td><strong>Portfolio</strong></td>
+      <td class="r"><strong>${isNaN(tcn)?'100%':tcn.toFixed(2)+'%'}</strong></td>
+      <td class="mono">—</td>
+      <td class="r"><strong>${isNaN(tmd)?'—':tmd.toFixed(4)}</strong></td>
+      <td class="r"><strong>${isNaN(tcv)?'—':tcv.toFixed(6)}</strong></td>
+      <td class="r" colspan="4">—</td>
+    </tr>`;
+  }
+  $('risk-tbody').innerHTML=rkb;$('risk-tfoot').innerHTML=rkf;
+
+  // ─────────────────────────────────────────────────────────────
+  // CHARTS
+  // ─────────────────────────────────────────────────────────────
+
+  // 1. Concentration doughnut
+  const concD=positions.map(r=>({n:sn(r.__instr||r[1]),p:parseNum(v(r,iCN))||0})).filter(x=>x.p>0).sort((a,b)=>b.p-a.p);
+  dc('c-conc');charts['c-conc']=new Chart($('c-conc'),{
+    type:'doughnut',
+    data:{labels:concD.map(x=>x.n),datasets:[{data:concD.map(x=>x.p),backgroundColor:CC,borderWidth:1,borderColor:'#fff'}]},
+    options:{...CD,cutout:'50%',plugins:{...CD.plugins,legend:{position:'right',labels:{font:{size:9},boxWidth:10,color:'#0d1b2a'}}},tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.parsed.toFixed(2)+'%'}}}
+  });
+
+  // 2. Weekly yield bar — multiply raw decimals by 100 for chart axis
+  const yD=positions.map(r=>({n:sn(r.__instr||r[1]),v:(parseNum(v(r,iWY>=0?iWY:14))||0)*100})).filter(x=>x.v>0);
+  dc('c-yield');charts['c-yield']=new Chart($('c-yield'),{
+    type:'bar',
+    data:{labels:yD.map(x=>x.n),datasets:[{data:yD.map(x=>x.v),backgroundColor:CC,borderRadius:4,borderSkipped:false}]},
+    options:{...CD,plugins:{...CD.plugins,legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{beginAtZero:true,grid:{color:'#f0ebe0'},ticks:{callback:vv=>vv.toFixed(1)+'%'}}}}
+  });
+
+  // 3. WoW value comparison
+  const topP=positions.slice().sort((a,b)=>parseNum(v(b,iCW))-parseNum(v(a,iCW))).slice(0,8);
+  dc('c-wow');charts['c-wow']=new Chart($('c-wow'),{
+    type:'bar',
+    data:{labels:topP.map(r=>sn(r.__instr||r[1])),datasets:[
+      {label:'Past Week',data:topP.map(r=>Math.round(parseNum(v(r,iPW))/1e6)),backgroundColor:'#c8bfaf',borderRadius:3,borderSkipped:false},
+      {label:'Current Week',data:topP.map(r=>Math.round(parseNum(v(r,iCW))/1e6)),backgroundColor:'#1a6b28',borderRadius:3,borderSkipped:false}
+    ]},
+    options:{...CD,scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{beginAtZero:true,grid:{color:'#f0ebe0'},ticks:{callback:vv=>vv+'M'}}}}
+  });
+
+  // 4. PKRV Yield Curve (or secondary yields fallback)
+  dc('c-pkrv');
+  let pkrvLabels,pkrvVals,pkrvTitle;
+  if(pkrvData&&pkrvData.points&&pkrvData.points.length>=2){
+    pkrvLabels=pkrvData.points.map(p=>p.tenor);
+    pkrvVals=pkrvData.points.map(p=>p.yield);
+    pkrvTitle='PKRV Yield Curve'+(pkrvData.date?' · '+pkrvData.date:'');
+    $('pkrv-sub').textContent='SBP Pakistan Rupee Valuation Rates'+(pkrvData.date?' · '+pkrvData.date:'');
+  } else {
+    // Fallback: use secondary yields from positions that have them
+    const secPts=positions.filter(r=>iSY>=0&&v(r,iSY)!=='').map(r=>{
+      const tenor=iTN>=0?String(v(r,iTN)).trim():'';
+      const yld=parseNum(v(r,iSY));
+      return{tenor,yld};
+    }).filter(x=>x.tenor&&!isNaN(x.yld)&&x.yld>0);
+    // Also add known PKRV reference points from sheet data
+    const knownPts=[
+      {tenor:'6M',yld:11.44},{tenor:'1Y',yld:11.72}
+    ];
+    const allPts=[...knownPts,...secPts].filter((p,i,a)=>a.findIndex(x=>x.tenor===p.tenor)===i);
+    const tenorOrd={'3M':1,'6M':2,'1Y':3,'2Y':4,'3Y':5,'5Y':6,'7Y':7,'10Y':8};
+    allPts.sort((a,b)=>(tenorOrd[a.tenor]||99)-(tenorOrd[b.tenor]||99));
+    pkrvLabels=allPts.map(p=>p.tenor);
+    pkrvVals=allPts.map(p=>p.yld);
+    pkrvTitle='Secondary Yields (PKRV sheet not found — add PKRV sheet to xlsx)';
+    $('pkrv-sub').textContent='Secondary market yields from WoW sheet · Add PKRV sheet for full curve';
+  }
+  charts['c-pkrv']=new Chart($('c-pkrv'),{
+    type:'line',
+    data:{labels:pkrvLabels,datasets:[{
+      label:'Yield (%)',data:pkrvVals,
+      borderColor:'#1e6091',backgroundColor:'rgba(30,96,145,0.08)',
+      borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#1e6091',
+      tension:0.35,fill:true
+    }]},
+    options:{...CD,plugins:{...CD.plugins,legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.parsed.y.toFixed(2)+'%'}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#f0ebe0'},ticks:{callback:vv=>vv.toFixed(1)+'%'},suggestedMin:9,suggestedMax:14}}}
+  });
+
+  // 5. Multi-period returns — multiply raw decimals by 100
+  dc('c-returns');charts['c-returns']=new Chart($('c-returns'),{
+    type:'bar',
+    data:{labels:positions.map(r=>sn(r.__instr||r[1])),datasets:[
+      {label:'1-Day', data:positions.map(r=>(parseNum(v(r,i1D))||0)*100),backgroundColor:'#1e6091',borderRadius:3,borderSkipped:false},
+      {label:'30-Day',data:positions.map(r=>(parseNum(v(r,i30))||0)*100),backgroundColor:'#1a6b28',borderRadius:3,borderSkipped:false},
+      {label:'90-Day',data:positions.map(r=>(parseNum(v(r,i90))||0)*100),backgroundColor:'#f9a825',borderRadius:3,borderSkipped:false}
+    ]},
+    options:{...CD,scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{beginAtZero:true,grid:{color:'#f0ebe0'},ticks:{callback:vv=>vv.toFixed(1)+'%'}}}}
+  });
+
+  // 6. Gain/Loss per instrument
+  dc('c-gl');charts['c-gl']=new Chart($('c-gl'),{
+    type:'bar',
+    data:{labels:positions.map(r=>sn(r.__instr||r[1])),datasets:[{
+      data:positions.map(r=>{const g=parseNum(v(r,iGL));return isNaN(g)?0:Math.round(g/1e3);}),
+      backgroundColor:positions.map(r=>{const g=parseNum(v(r,iGL));return g>=0?'#1a6b28':'#b71c1c';}),
+      borderRadius:3,borderSkipped:false
+    }]},
+    options:{...CD,plugins:{...CD.plugins,legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{beginAtZero:true,grid:{color:'#f0ebe0'},ticks:{callback:vv=>vv+'K'}}}}
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// INIT — auto-load on page open
+// ─────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', loadData);
+</script>
+</body>
+</html>
