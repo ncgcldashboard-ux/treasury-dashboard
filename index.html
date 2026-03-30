@@ -142,7 +142,10 @@ tfoot td.mono{font-family:var(--font-mono);text-align:right;}
     <div class="data-item">Last refreshed: <strong id="lastRefreshed">—</strong></div>
   </div>
   <div>
-    <button onclick="loadData()" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:5px 14px;font-family:var(--font-body);font-size:0.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">↻ Refresh</button>
+    <div style="position:relative;">
+      <button onclick="loadData()" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:5px 14px;font-family:var(--font-body);font-size:0.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">↻ Refresh</button>
+      <input type="file" id="fallbackInput" accept=".xlsx" style="display:none;" onchange="loadLocalFile(this)">
+    </div>
   </div>
 </div>
 
@@ -384,38 +387,53 @@ function sn(n){
 // LOAD DATA
 // ─────────────────────────────────────────────────────────────
 async function loadData(){
-  setStatus('Fetching data from GitHub…','loading');
+  setStatus('Fetching from GitHub…','loading');
   const now=new Date();
   $('lastRefreshed').textContent=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
-
   try{
-    // Fetch with cache-busting
     const res=await fetch(XLSX_URL+'?t='+Date.now());
-    if(!res.ok)throw new Error('HTTP '+res.status+' — check the file exists at the repo URL and the repo is public.');
-
-    // Try to get file last-modified date from headers
+    if(!res.ok)throw new Error('HTTP '+res.status);
     const lastMod=res.headers.get('Last-Modified')||res.headers.get('last-modified');
-    if(lastMod){
-      const d=new Date(lastMod);
-      $('fileDate').textContent=d.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
-    } else {
-      $('fileDate').textContent='(not available)';
-    }
-
+    $('fileDate').textContent=lastMod
+      ? new Date(lastMod).toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'})
+      : '(not available)';
     const buf=await res.arrayBuffer();
     const wb=XLSX.read(buf,{type:'array',cellDates:true});
-
     $('footerFile').textContent=XLSX_URL.split('/').pop();
     processWorkbook(wb);
-    setStatus('Data loaded successfully · '+wb.SheetNames.length+' sheet(s): '+wb.SheetNames.join(', '),'ok');
-
-    // Update timestamps
+    setStatus('Data loaded from GitHub · '+wb.SheetNames.length+' sheet(s)','ok');
     const ts=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
-    $('asOfDate').textContent=ts; $('footerDate').textContent=ts;
-
+    $('asOfDate').textContent=ts;$('footerDate').textContent=ts;
   }catch(e){
-    setStatus('Error: '+e.message,'err');
+    // GitHub failed — silently prompt local file picker as fallback
+    setStatus('GitHub unavailable — select your data.xlsx file','err');
+    $('fallbackInput').click();
   }
+}
+
+function loadLocalFile(input){
+  const file=input.files[0];
+  if(!file)return;
+  setStatus('Reading '+file.name+'…','loading');
+  const now=new Date();
+  $('lastRefreshed').textContent=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
+  $('fileDate').textContent=new Date(file.lastModified).toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
+  $('footerFile').textContent=file.name;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+      processWorkbook(wb);
+      setStatus('Loaded: '+file.name+' · '+wb.SheetNames.length+' sheet(s)','ok');
+      const ts=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
+      $('asOfDate').textContent=ts;$('footerDate').textContent=ts;
+    }catch(err){
+      setStatus('Error reading file: '+err.message,'err');
+    }
+    input.value='';
+  };
+  reader.onerror=()=>{setStatus('Failed to read file','err');input.value='';};
+  reader.readAsArrayBuffer(file);
 }
 
 // ─────────────────────────────────────────────────────────────
