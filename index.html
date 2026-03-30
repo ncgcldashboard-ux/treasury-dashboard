@@ -774,7 +774,7 @@ function renderWoW(headers,dataRows,pkrvData){
   // 4. PKRV Yield Curve — from "PKRV Rates" sheet (yields already in %)
   dc('c-pkrv');
   if(pkrvData&&pkrvData.points&&pkrvData.points.length>=2){
-    $('pkrv-sub').textContent='SBP PKRV Rates · As of '+pkrvData.date;;
+    $('pkrv-sub').textContent='SBP PKRV Rates · As of '+pkrvData.date;
     const pkrvLabels=pkrvData.points.map(p=>p.tenor);
     const pkrvVals=pkrvData.points.map(p=>p.yield);
     const yMin=Math.floor((Math.min(...pkrvVals)-0.5)*2)/2;
