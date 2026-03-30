@@ -223,7 +223,7 @@ tfoot td.mono{font-family:var(--font-mono);text-align:right;}
       <thead><tr>
         <th>#</th><th>Instrument</th><th>Type</th>
         <th class="r">Cost of Placement</th><th class="r">Past Week</th><th class="r">Current Week</th>
-        <th class="r">Gain / Loss</th><th class="r">W. Yield</th><th class="r">Concentration</th><th class="r">Rem. Days</th>
+        <th class="r">Gain / Loss</th><th class="r">W. Yield</th><th class="r">Rem. Days</th>
       </tr></thead>
       <tbody id="pos-tbody"></tbody>
       <tfoot id="pos-tfoot"></tfoot>
@@ -673,14 +673,12 @@ function renderWoW(headers,dataRows,pkrvData){
       <td class="mono">${isNaN(cw)?'—':fmtN(cw)}</td>
       <td class="mono" style="${gls}">${isNaN(gl)?'—':(gl>=0?'+':'')+fmtN(gl)}</td>
       <td class="r">${yld}</td>
-      <td class="r">${isNaN(cn)?'—':(cn*100).toFixed(2)+'%'}</td>
     tf=`<tr>
       <td colspan="2"><strong>Total (Gross)</strong></td><td></td>
       <td class="mono">—</td><td class="mono">—</td>
       <td class="mono"><strong>${isNaN(tc)?'—':fmtN(tc)}</strong></td>
       <td class="mono" style="${isNaN(tg)?'':(tg>=0?'color:var(--green)':'color:var(--red)')}"><strong>${isNaN(tg)?'—':(tg>=0?'+':'')+fmtN(tg)}</strong></td>
-      <td class="r"><strong>${tYld}</strong></td>
-      <td class="r"><strong>100%</strong></td><td class="r">—</td>
+      <td class="r"><strong>${tYld}</strong></td><td class="r">—</td>
     </tr>`;
   }
   $('pos-tbody').innerHTML=tb;
