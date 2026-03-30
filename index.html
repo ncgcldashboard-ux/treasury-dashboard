@@ -297,7 +297,7 @@ tfoot td.mono{font-family:var(--font-mono);text-align:right;}
   <div class="tbl-wrap">
     <table>
       <thead><tr>
-        <th>Instrument</th><th class="r">Concentration</th><th class="r">PVBP</th>
+        <th>Instrument</th><th class="r">PVBP</th>
         <th class="r">Mod. Duration</th><th class="r">Convexity</th><th class="r">Tenor</th>
         <th class="r">Secondary Yield</th><th class="r">Dirty Price</th><th class="r">Rem. Days</th>
       </tr></thead>
@@ -717,7 +717,7 @@ function renderWoW(headers,dataRows,pkrvData){
     const dp=iDP>=0?parseNum(v(r,iDP)):NaN;
     rkb+=`<tr>
       <td style="font-weight:700">${instr}</td>
-      <td class="r">${isNaN(cn)?'—':(cn*100).toFixed(2)+'%'}</td>
+      <td class="mono">${iPV>=0&&v(r,iPV)?fmtN(parseNum(v(r,iPV))):'—'}</td>
       <td class="r">${isNaN(md)?'—':md.toFixed(4)}</td>
       <td class="r">${isNaN(cv)?'—':cv.toFixed(6)}</td>
       <td class="r">${iTN>=0?fmtRaw(v(r,iTN)):'—'}</td>
@@ -727,14 +727,13 @@ function renderWoW(headers,dataRows,pkrvData){
     </tr>`;
   });
   if(T){
-    const tcn=parseNum(v(T,iCN)),tmd=parseNum(v(T,iMD)),tcv=parseNum(v(T,iCV));
+    const tmd=parseNum(v(T,iMD)),tcv=parseNum(v(T,iCV));
     rkf=`<tr>
       <td><strong>Portfolio</strong></td>
-      <td class="r"><strong>${isNaN(tcn)?'100.00%':(tcn*100).toFixed(2)+'%'}</strong></td>
       <td class="mono">—</td>
       <td class="r"><strong>${isNaN(tmd)?'—':tmd.toFixed(4)}</strong></td>
       <td class="r"><strong>${isNaN(tcv)?'—':tcv.toFixed(6)}</strong></td>
-      <td class="r" colspan="4">—</td>
+      <td class="r" colspan="5">—</td>
     </tr>`;
   }
   $('risk-tbody').innerHTML=rkb;$('risk-tfoot').innerHTML=rkf;
