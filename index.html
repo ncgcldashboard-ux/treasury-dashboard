@@ -860,7 +860,7 @@ function loadLocalFile(input){
   const reader=new FileReader();
   reader.onload=e=>{
     try{
-      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
       processWorkbook(wb);
       setStatus('Loaded: '+file.name+' · '+wb.SheetNames.length+' sheet(s)','ok');
       const ts=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
@@ -868,13 +868,15 @@ function loadLocalFile(input){
     }catch(err){
       setStatus('Error reading file: '+err.message,'err');
     }
+    // Reset AFTER read is complete so same file can be re-uploaded
+    input.value='';
   };
-  reader.onerror=()=>setStatus('Failed to read file','err');
+  reader.onerror=()=>{ setStatus('Failed to read file','err'); input.value=''; };
   reader.readAsArrayBuffer(file);
-  // Reset input so same file can be re-uploaded
-  input.value='';
 }
-window.addEventListener('DOMContentLoaded', loadData);
+window.addEventListener('DOMContentLoaded',()=>{
+  setStatus('Ready — upload an xlsx file or click ↻ GitHub','');
+});
 </script>
 </body>
 </html>
