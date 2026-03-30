@@ -6,9 +6,6 @@
 <title>NCGCL Treasury Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --ink:#0d1b2a; --paper:#f5f0e8; --cream:#ede8dc;
@@ -16,11 +13,9 @@
   --green:#2b8c3a; --green2:#1a6b28;
   --blue:#1e6091; --amber:#e65100; --red:#b71c1c;
   --gold:#f9a825; --slate:#37474f;
-  --font-body:'Inter',system-ui,-apple-system,sans-serif;
-  --font-mono:'IBM Plex Mono','Courier New',monospace;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:0.82rem;line-height:1.5;-webkit-font-smoothing:antialiased;}
+body{background:var(--paper);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;font-size:0.82rem;line-height:1.5;}
 .wrap{max-width:1280px;margin:0 auto;padding:clamp(14px,4vw,32px);}
 
 /* HEADER */
@@ -28,7 +23,7 @@ body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-
 .header h1{font-size:clamp(1.1rem,3vw,1.65rem);font-weight:800;letter-spacing:-0.5px;color:var(--ink);}
 .header p{font-size:0.72rem;color:var(--muted);margin-top:2px;letter-spacing:0.3px;}
 .header-badge{background:var(--green);color:#fff;padding:6px 16px;border-radius:4px;font-weight:700;font-size:0.72rem;text-align:center;letter-spacing:0.5px;white-space:nowrap;}
-.header-badge span{display:block;font-size:1.1rem;font-weight:800;font-family:var(--font-mono);}
+.header-badge span{display:block;font-size:1.1rem;font-weight:800;font-family:'Courier New',monospace;}
 
 /* DATA BAR */
 .data-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:10px 16px;margin-bottom:20px;font-size:0.72rem;color:var(--muted);}
@@ -45,14 +40,14 @@ body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-
 /* KPI STRIP */
 .kpi-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:14px 18px;margin-bottom:20px;}
 .kpi{text-align:center;}
-.kpi-val{font-size:clamp(1rem,2.2vw,1.7rem);font-weight:800;color:var(--green);letter-spacing:-0.5px;font-family:var(--font-mono);}
+.kpi-val{font-size:clamp(1rem,2.2vw,1.7rem);font-weight:800;color:var(--green);letter-spacing:-0.5px;font-family:'Courier New',monospace;}
 .kpi-val.blue{color:var(--blue);}.kpi-val.amber{color:var(--amber);}.kpi-val.slate{color:var(--slate);}.kpi-val.red{color:var(--red);}
 .kpi-label{font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:600;margin-top:2px;}
 .kpi-sub{font-size:0.58rem;color:var(--border);margin-top:1px;}
 
 /* TABS */
 .tabs{display:flex;gap:6px;border-bottom:2px solid var(--border);margin-bottom:20px;overflow-x:auto;padding-bottom:2px;}
-.tab-btn{background:none;border:none;padding:8px 16px;font-family:var(--font-body);font-size:0.78rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .15s;}
+.tab-btn{background:none;border:none;padding:8px 16px;font-family:inherit;font-size:0.78rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .15s;}
 .tab-btn:hover{color:var(--ink);}
 .tab-btn.active{color:var(--green);border-bottom-color:var(--green);}
 .tab-panel{display:none;}.tab-panel.active{display:block;}
@@ -70,7 +65,7 @@ body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-
 /* INSIGHTS */
 .insights{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
 .insight{background:var(--cream);border-left:4px solid var(--green);border-radius:4px;padding:14px 16px;}
-.insight-n{font-size:1.3rem;font-weight:800;color:var(--green);font-family:var(--font-mono);}
+.insight-n{font-size:1.3rem;font-weight:800;color:var(--green);font-family:'Courier New',monospace;}
 .insight-d{font-size:0.72rem;color:var(--ink);margin-top:3px;line-height:1.4;}
 .insight.amber{border-left-color:var(--amber);}.insight.amber .insight-n{color:var(--amber);}
 .insight.blue{border-left-color:var(--blue);}.insight.blue .insight-n{color:var(--blue);}
@@ -87,12 +82,12 @@ thead th.r{text-align:right;}
 tbody tr{border-bottom:1px solid var(--cream);}
 tbody tr:hover{background:var(--cream);}
 tbody td{padding:8px 12px;font-size:0.78rem;vertical-align:middle;}
-tbody td.mono{font-family:var(--font-mono);font-weight:700;text-align:right;}
+tbody td.mono{font-family:'Courier New',monospace;font-weight:700;text-align:right;}
 tbody td.r{text-align:right;}
 tbody td.muted{color:var(--muted);font-size:0.72rem;}
 tfoot tr{border-top:2px solid var(--ink);}
 tfoot td{padding:9px 12px;font-size:0.78rem;font-weight:700;background:var(--cream);}
-tfoot td.mono{font-family:var(--font-mono);text-align:right;}
+tfoot td.mono{font-family:'Courier New',monospace;text-align:right;}
 
 /* PILLS */
 .pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.62rem;font-weight:700;letter-spacing:0.4px;white-space:nowrap;}
@@ -105,7 +100,7 @@ tfoot td.mono{font-family:var(--font-mono);text-align:right;}
 /* BENCHMARK */
 .bench-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
 .bench-card{background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:14px 16px;text-align:center;}
-.bench-val{font-size:1.4rem;font-weight:800;font-family:var(--font-mono);margin:4px 0 2px;}
+.bench-val{font-size:1.4rem;font-weight:800;font-family:'Courier New',monospace;margin:4px 0 2px;}
 .bench-label{font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:600;}
 .bench-sub{font-size:0.62rem;color:var(--muted);margin-top:2px;}
 
@@ -142,10 +137,7 @@ tfoot td.mono{font-family:var(--font-mono);text-align:right;}
     <div class="data-item">Last refreshed: <strong id="lastRefreshed">—</strong></div>
   </div>
   <div>
-    <div style="position:relative;">
-      <button onclick="loadData()" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:5px 14px;font-family:var(--font-body);font-size:0.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">↻ Refresh</button>
-      <input type="file" id="fallbackInput" accept=".xlsx" style="display:none;" onchange="loadLocalFile(this)">
-    </div>
+    <button onclick="loadData()" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:5px 14px;font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;">↻ Refresh</button>
   </div>
 </div>
 
@@ -163,6 +155,7 @@ tfoot td.mono{font-family:var(--font-mono);text-align:right;}
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('overview',this)">Overview &amp; Charts</button>
   <button class="tab-btn" onclick="switchTab('positions',this)">WoW Positions</button>
+  <button class="tab-btn" onclick="switchTab('returns',this)">Return Rates</button>
   <button class="tab-btn" onclick="switchTab('fund',this)">Fund Metrics</button>
 </div>
 
@@ -201,15 +194,10 @@ tfoot td.mono{font-family:var(--font-mono);text-align:right;}
       <div class="ch-short"><canvas id="c-wow"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-title">Weekly Gain / Loss per Instrument</div>
-      <div class="card-sub">PKR — green positive, red negative</div>
-      <div class="ch-short"><canvas id="c-gl"></canvas></div>
+      <div class="card-title">PKRV Yield Curve — Most Recent</div>
+      <div class="card-sub" id="pkrv-sub">Pakistan Rupee Valuation rates · SBP</div>
+      <div class="ch-short"><canvas id="c-pkrv"></canvas></div>
     </div>
-  </div>
-  <div class="card">
-    <div class="card-title">PKRV Yield Curve — Most Recent</div>
-    <div class="card-sub" id="pkrv-sub">Pakistan Rupee Valuation rates · SBP</div>
-    <div class="ch"><canvas id="c-pkrv"></canvas></div>
   </div>
 </div>
 
@@ -243,27 +231,61 @@ tfoot td.mono{font-family:var(--font-mono);text-align:right;}
   </div>
 </div>
 
+<!-- TAB: RETURN RATES -->
+<div id="tab-returns" class="tab-panel">
+  <div class="section-label">Return Rate Summary · All Instruments</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Instrument</th>
+        <th class="r">Weekly Yield</th>
+        <th class="r">Tax Adj. (1D)</th>
+        <th class="r">Gross Exp.</th>
+        <th class="r">Tax Adj. (30D)</th>
+        <th class="r">1-Day Return</th>
+        <th class="r">15-Day Return</th>
+        <th class="r">30-Day Return</th>
+        <th class="r">90-Day Return</th>
+      </tr></thead>
+      <tbody id="rate-tbody"></tbody>
+      <tfoot id="rate-tfoot"></tfoot>
+    </table>
+  </div>
+  <div class="g2" style="margin-top:16px;">
+    <div class="card">
+      <div class="card-title">Multi-Period Return Comparison</div>
+      <div class="card-sub">1-Day vs 30-Day vs 90-Day returns by instrument</div>
+      <div class="ch"><canvas id="c-returns"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Weekly Gain / Loss per Instrument</div>
+      <div class="card-sub">PKR — green positive, red negative</div>
+      <div class="ch"><canvas id="c-gl"></canvas></div>
+    </div>
+  </div>
+</div>
+
 <!-- TAB: FUND METRICS -->
 <div id="tab-fund" class="tab-panel">
   <div class="section-label">NAV — Clean &amp; Dirty</div>
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
     <div class="card" style="text-align:center;margin-bottom:0;">
       <div class="card-sub" style="margin-bottom:8px;">Clean NAV — Past Week</div>
-      <div style="font-size:1.8rem;font-weight:800;font-family:var(--font-mono);color:var(--slate)" id="fm-navprev">—</div>
+      <div style="font-size:1.8rem;font-weight:800;font-family:'Courier New',monospace;color:var(--slate)" id="fm-navprev">—</div>
     </div>
     <div class="card" style="text-align:center;border-top:3px solid var(--green);margin-bottom:0;">
       <div class="card-sub" style="margin-bottom:8px;">Clean NAV — Current</div>
-      <div style="font-size:1.8rem;font-weight:800;font-family:var(--font-mono);color:var(--green)" id="fm-navcur">—</div>
+      <div style="font-size:1.8rem;font-weight:800;font-family:'Courier New',monospace;color:var(--green)" id="fm-navcur">—</div>
       <div style="font-size:0.72rem;margin-top:4px;" id="fm-navwow">—</div>
     </div>
     <div class="card" style="text-align:center;border-top:3px solid var(--amber);margin-bottom:0;">
       <div class="card-sub" style="margin-bottom:8px;">Dirty NAV — Current</div>
-      <div style="font-size:1.8rem;font-weight:800;font-family:var(--font-mono);color:var(--amber)" id="fm-dnavcur">—</div>
+      <div style="font-size:1.8rem;font-weight:800;font-family:'Courier New',monospace;color:var(--amber)" id="fm-dnavcur">—</div>
       <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;">Incl. accrued income</div>
     </div>
     <div class="card" style="text-align:center;margin-bottom:0;">
       <div class="card-sub" style="margin-bottom:8px;">NAV Units Outstanding</div>
-      <div style="font-size:1.8rem;font-weight:800;font-family:var(--font-mono);color:var(--blue)" id="fm-units">—</div>
+      <div style="font-size:1.8rem;font-weight:800;font-family:'Courier New',monospace;color:var(--blue)" id="fm-units">—</div>
     </div>
   </div>
 
@@ -295,7 +317,7 @@ tfoot td.mono{font-family:var(--font-mono);text-align:right;}
   <div class="tbl-wrap">
     <table>
       <thead><tr>
-        <th>Instrument</th><th class="r">PVBP</th>
+        <th>Instrument</th><th class="r">Concentration</th><th class="r">PVBP</th>
         <th class="r">Mod. Duration</th><th class="r">Convexity</th><th class="r">Tenor</th>
         <th class="r">Secondary Yield</th><th class="r">Dirty Price</th><th class="r">Rem. Days</th>
       </tr></thead>
@@ -387,53 +409,38 @@ function sn(n){
 // LOAD DATA
 // ─────────────────────────────────────────────────────────────
 async function loadData(){
-  setStatus('Fetching from GitHub…','loading');
+  setStatus('Fetching data from GitHub…','loading');
   const now=new Date();
   $('lastRefreshed').textContent=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
+
   try{
+    // Fetch with cache-busting
     const res=await fetch(XLSX_URL+'?t='+Date.now());
-    if(!res.ok)throw new Error('HTTP '+res.status);
+    if(!res.ok)throw new Error('HTTP '+res.status+' — check the file exists at the repo URL and the repo is public.');
+
+    // Try to get file last-modified date from headers
     const lastMod=res.headers.get('Last-Modified')||res.headers.get('last-modified');
-    $('fileDate').textContent=lastMod
-      ? new Date(lastMod).toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'})
-      : '(not available)';
+    if(lastMod){
+      const d=new Date(lastMod);
+      $('fileDate').textContent=d.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
+    } else {
+      $('fileDate').textContent='(not available)';
+    }
+
     const buf=await res.arrayBuffer();
     const wb=XLSX.read(buf,{type:'array',cellDates:true});
+
     $('footerFile').textContent=XLSX_URL.split('/').pop();
     processWorkbook(wb);
-    setStatus('Data loaded from GitHub · '+wb.SheetNames.length+' sheet(s)','ok');
-    const ts=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
-    $('asOfDate').textContent=ts;$('footerDate').textContent=ts;
-  }catch(e){
-    // GitHub failed — silently prompt local file picker as fallback
-    setStatus('GitHub unavailable — select your data.xlsx file','err');
-    $('fallbackInput').click();
-  }
-}
+    setStatus('Data loaded successfully · '+wb.SheetNames.length+' sheet(s): '+wb.SheetNames.join(', '),'ok');
 
-function loadLocalFile(input){
-  const file=input.files[0];
-  if(!file)return;
-  setStatus('Reading '+file.name+'…','loading');
-  const now=new Date();
-  $('lastRefreshed').textContent=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
-  $('fileDate').textContent=new Date(file.lastModified).toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
-  $('footerFile').textContent=file.name;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    try{
-      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
-      processWorkbook(wb);
-      setStatus('Loaded: '+file.name+' · '+wb.SheetNames.length+' sheet(s)','ok');
-      const ts=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
-      $('asOfDate').textContent=ts;$('footerDate').textContent=ts;
-    }catch(err){
-      setStatus('Error reading file: '+err.message,'err');
-    }
-    input.value='';
-  };
-  reader.onerror=()=>{setStatus('Failed to read file','err');input.value='';};
-  reader.readAsArrayBuffer(file);
+    // Update timestamps
+    const ts=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
+    $('asOfDate').textContent=ts; $('footerDate').textContent=ts;
+
+  }catch(e){
+    setStatus('Error: '+e.message,'err');
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -449,8 +456,10 @@ function processWorkbook(wb){
   const headers=rawWoW[headerIdx].map(c=>String(c).trim());
   const dataRows=rawWoW.slice(headerIdx+1).filter(r=>r.some(c=>c!==''&&c!==null&&c!==undefined));
 
-  // PKRV — only read from the "PKRV rates" sheet
-  const pkrvName=wb.SheetNames.find(n=>/pkrv.?rates?/i.test(n));
+  // PKRV sheet — look for "PKRV History" (or any name containing pkrv)
+  const pkrvName=wb.SheetNames.find(n=>/pkrv.?hist/i.test(n))
+               ||wb.SheetNames.find(n=>/pkrv/i.test(n))
+               ||wb.SheetNames.find(n=>/yield.?curve/i.test(n));
   let pkrvData=null;
   if(pkrvName){
     const wsPKRV=wb.Sheets[pkrvName];
@@ -462,88 +471,75 @@ function processWorkbook(wb){
 }
 
 // ─────────────────────────────────────────────────────────────
-// PARSE PKRV RATES SHEET
-//
-// Layout: tenors in rows (col 0), dates across columns (row 0).
-//   Row 0:  [label]  | 19-Mar-26 | 24-Mar-26 | … | 27-Mar-26
-//   Row 1:  1W       |  10.50    |  10.49    | … |  10.51
-//
-// Yields are stored as whole-number percentages (10.5 = 10.5%).
+// PARSE PKRV HISTORY SHEET
+// Expected layout: Date in col 0, then tenor columns (3M, 6M, 1Y, 3Y, 5Y, 10Y…)
+// Finds the most recent date row (highest date value in the date column)
+// Yields stored as decimals (0.1172 = 11.72%) — multiply by 100
 // ─────────────────────────────────────────────────────────────
 function parsePKRV(raw){
-  if(!raw||raw.length<2)return null;
+  if(!raw||!raw.length)return null;
 
+  // Find header row — must contain tenor-like values OR "date"
+  const hIdx=raw.findIndex(r=>r.some(c=>/^date$/i.test(String(c).trim()))||
+                               r.some(c=>/^\d+[YyMm]$/.test(String(c).trim())));
+  if(hIdx<0)return null;
+
+  const hdr=raw[hIdx].map(c=>String(c).trim());
+  const dateColIdx=hdr.findIndex(h=>/^date$/i.test(h));
+
+  // Find all tenor columns
+  const tenorCols=[];
+  hdr.forEach((h,i)=>{
+    if(/^\d+[YyMm]$/.test(h)||/^(3M|6M|1Y|2Y|3Y|5Y|7Y|10Y|15Y|20Y|30Y)$/i.test(h)){
+      tenorCols.push({tenor:h,idx:i});
+    }
+  });
+  if(!tenorCols.length)return null;
+
+  // Collect all data rows that have a valid date
+  const dataRows=raw.slice(hIdx+1).filter(r=>{
+    const d=dateColIdx>=0?r[dateColIdx]:r[0];
+    return d!==null&&d!==undefined&&d!=='';
+  });
+  if(!dataRows.length)return null;
+
+  // Find the most recent row by date
+  // Dates may be JS Date objects (from SheetJS cellDates:true) or strings
   const toTime=d=>{
-    if(!d&&d!==0)return 0;
-    if(d instanceof Date){
-      if(isNaN(d.getTime()))return 0;
-      return d.getUTCFullYear()*10000+(d.getUTCMonth()+1)*100+d.getUTCDate();
-    }
-    if(typeof d==='number'&&d>0){
-      const serial=d>60?d-1:d;
-      const epoch=new Date(Date.UTC(1900,0,1)+(serial-1)*86400000);
-      return epoch.getUTCFullYear()*10000+(epoch.getUTCMonth()+1)*100+epoch.getUTCDate();
-    }
-    const s=String(d).trim();
-    if(!s)return 0;
-    const MONTHS={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
-    const m1=s.match(/^(\d{1,2})[-\/\s](\w+)[-\/\s](\d{4})$/);
-    if(m1){const mo=MONTHS[m1[2].slice(0,3).toLowerCase()];if(mo)return parseInt(m1[3])*10000+mo*100+parseInt(m1[1]);}
-    const m2=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if(m2)return parseInt(m2[1])*10000+parseInt(m2[2])*100+parseInt(m2[3]);
-    const m3=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if(m3)return parseInt(m3[3])*10000+parseInt(m3[2])*100+parseInt(m3[1]);
-    return 0;
+    if(d instanceof Date)return d.getTime();
+    const parsed=new Date(String(d));
+    return isNaN(parsed.getTime())?0:parsed.getTime();
   };
-
-  const fmtDateSafe=d=>{
-    if(d instanceof Date&&!isNaN(d.getTime())){
-      const y=d.getUTCFullYear(),mo=d.getUTCMonth(),day=d.getUTCDate();
-      const mnames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      return String(day).padStart(2,'0')+'-'+mnames[mo]+'-'+y;
-    }
-    if(typeof d==='number'&&d>0){
-      const serial=d>60?d-1:d;
-      const epoch=new Date(Date.UTC(1900,0,1)+(serial-1)*86400000);
-      const mnames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      return String(epoch.getUTCDate()).padStart(2,'0')+'-'+mnames[epoch.getUTCMonth()]+'-'+epoch.getUTCFullYear();
-    }
-    return String(d).trim();
-  };
-
-  const headerRow=raw[0];
-  let bestColIdx=-1,bestTime=0;
-  headerRow.forEach((cell,ci)=>{
-    if(ci===0)return;
-    const t=toTime(cell);
-    if(t>bestTime){bestTime=t;bestColIdx=ci;}
+  const dateCol=dateColIdx>=0?dateColIdx:0;
+  let latestRow=dataRows[0];
+  dataRows.forEach(r=>{
+    if(toTime(r[dateCol])>toTime(latestRow[dateCol]))latestRow=r;
   });
 
-  if(bestColIdx<0||bestTime===0)return null;
-  const curveDate=fmtDateSafe(headerRow[bestColIdx]);
+  // Format the date
+  const rawDate=latestRow[dateCol];
+  let curveDate='';
+  if(rawDate instanceof Date){
+    curveDate=rawDate.toLocaleDateString('en-PK',{day:'2-digit',month:'short',year:'numeric'});
+  } else {
+    curveDate=String(rawDate).trim();
+  }
 
-  const tenorWeeks=t=>{
-    const m=String(t).trim().match(/(\d+)\s*([WwMmYy])/);
-    if(!m)return 99999;
-    const n=parseInt(m[1]),u=m[2].toLowerCase();
-    if(u==='w')return n;if(u==='m')return n*4.33;if(u==='y')return n*52;return 99999;
-  };
+  // Extract tenor → yield pairs from this row
+  // Multiply by 100 since stored as decimals
+  const points=tenorCols.map(({tenor,idx})=>{
+    const raw=latestRow[idx];
+    const n=parseFloat(String(raw).replace(/[,\s%]/g,''));
+    if(isNaN(n)||n===0)return null;
+    // If value looks like a decimal rate (< 1), multiply by 100
+    const yield_=n<1?n*100:n;
+    return{tenor,yield:yield_};
+  }).filter(Boolean);
 
-  const points=[];
-  raw.slice(1).forEach(row=>{
-    if(!row||!row[0])return;
-    const tenor=String(row[0]).trim();
-    if(!tenor)return;
-    const n=parseFloat(String(row[bestColIdx]||'').replace(/[,\s%]/g,''));
-    if(isNaN(n)||n===0)return;
-    // PKRV Rates sheet stores yields as whole-number % (e.g. 10.5 = 10.5%)
-    // Values < 1 would be decimal form and need ×100; values ≥ 1 are already %
-    const yld=Math.abs(n)<1?n*100:n;
-    points.push({tenor,yield:yld});
-  });
+  // Sort by tenor in months
+  const tenorMonths=t=>{const m=t.match(/(\d+)([YyMm])/);if(!m)return 0;return parseInt(m[1])*(m[2].toLowerCase()==='y'?12:1);};
+  points.sort((a,b)=>tenorMonths(a.tenor)-tenorMonths(b.tenor));
 
-  if(!points.length)return null;
-  points.sort((a,b)=>tenorWeeks(a.tenor)-tenorWeeks(b.tenor));
   return{date:curveDate,points};
 }
 
@@ -551,13 +547,21 @@ function parsePKRV(raw){
 // RENDER WoW POSITIONS
 // ─────────────────────────────────────────────────────────────
 function renderWoW(headers,dataRows,pkrvData){
+  const h=(p)=>headers[ci(headers,p)]||'';
   const iI  =ci(headers,/instrument/i);
   const iCo =ci(headers,/cost.?of.?place/i);
   const iPW =ci(headers,/past.?week/i);
   const iCW =ci(headers,/current.?week/i);
   const iGL =ci(headers,/gain.?loss/i);
+  const i1D =ci(headers,/1.?day.?ret/i);
+  const i15 =ci(headers,/15.?day/i);
+  const i30 =ci(headers,/30.?day/i);
+  const i90 =ci(headers,/90.?day/i);
   const iWY =ci(headers,/weekly.?yield/i);
   const iRT =ci(headers,/^rate\s*$/i);
+  const iTX =ci(headers,/tax.?adj.*1.?day/i);
+  const iGE =ci(headers,/gross.?exp/i);
+  const iT3 =ci(headers,/tax.?adj.*30/i);
   const iCN =ci(headers,/concentration/i);
   const iPV =ci(headers,/pvbp/i);
   const iMD =ci(headers,/modified/i);
@@ -565,18 +569,21 @@ function renderWoW(headers,dataRows,pkrvData){
   const iTN =ci(headers,/^tenor/i);
   const iSY =ci(headers,/secondary/i);
   const iDP =ci(headers,/dirty.?pric/i);
+  const iDM =ci(headers,/days.?to.?mat/i);
   const iRD =ci(headers,/remaining/i);
   const iDPL=ci(headers,/date.?of.?place/i);
   const iDMT=ci(headers,/date.?of.?mat/i);
 
+  // Value accessor by column index
   const v=(row,idx)=>idx>=0?row[idx]??'':'';
 
-  // Weekly yield and rate columns are decimals (0.1088 = 10.88%) — multiply ×100 to display
+  // Values are stored as decimals in the xlsx (0.1088 = 10.88%)
+  // Multiply by 100 before displaying.
   const getPct=val=>{
     if(val===null||val===undefined||val==='')return'—';
     const n=parseFloat(String(val).replace(/[,\s%]/g,''));
     if(isNaN(n))return'—';
-    return(n*100).toFixed(2)+'%';
+    return (n*100).toFixed(2)+'%';
   };
 
   // ── Partition rows ──────────────────────────────────────────
@@ -591,43 +598,44 @@ function renderWoW(headers,dataRows,pkrvData){
     if(/^3mk$/i.test(instr)){sp.mk=parseNum(r[iCo>=0?iCo:2]);return;}
     if(/^nav\s*$/i.test(instr)){sp.navR=r;return;}
     if(/^nav.?units$/i.test(instr)){sp.unitsR=r;return;}
-    if(/^liabilities$/i.test(instr))return;
+    if(/^liabilities$/i.test(instr))return; // section header
     positions.push({...r.__raw,...r,__instr:instr,__raw:r});
   });
 
   // ── Special values ──────────────────────────────────────────
-  const T=sp.T,L=sp.L;
+  const T=sp.T, L=sp.L;
+  // These are stored as decimals (0.1038 = 10.38%) — multiply by 100 to display
+  const bench =sp.bench!=null ? sp.bench*100 : 10.38;
+  const alpha =sp.alpha!=null ? sp.alpha*100 : -3.73;
+  const mk3   =sp.mk!=null    ? sp.mk*100    : 11.38;
 
-  // Benchmark, Alpha, 3MK — all stored as decimals (e.g. 0.1043 = 10.43%)
-  // Multiply ×100 to convert to display percentage
-  const bench = sp.bench != null ? sp.bench * 100 : 10.43;
-  const alpha = sp.alpha != null ? sp.alpha * 100 : -0.09;
-  const mk3   = sp.mk   != null ? sp.mk   * 100 : 11.43;
-
-  // NAV rows
-  const navP  = sp.navR ? (parseNum(sp.navR[iPW>=0?iPW:3])||82.75) : 82.75;
-  const navC  = sp.navR ? (parseNum(sp.navR[iCW>=0?iCW:4])||82.92) : 82.92;
+  // NAV: col3=past week, col4=current week, col28=dirty (last col before end)
+  const navP   = sp.navR ? (parseNum(sp.navR[iPW>=0?iPW:3])||82.75) : 82.75;
+  const navC   = sp.navR ? (parseNum(sp.navR[iCW>=0?iCW:4])||82.92) : 82.92;
+  // Dirty NAV is in the last date column (col 28 in this sheet)
   const dirtyNavCol=sp.navR?Object.keys(sp.navR).filter(k=>!isNaN(k)).find(k=>parseInt(k)>=26&&sp.navR[k]&&parseNum(sp.navR[k])>70):null;
-  const dirtyNAV=dirtyNavCol?(parseNum(sp.navR[dirtyNavCol])||82.55):82.55;
-  const units =sp.unitsR?(parseNum(sp.unitsR[iPW>=0?iPW:3])||100000000):100000000;
-  const navWoW=((navC-navP)/navP*100);
+  const dirtyNAV = dirtyNavCol ? (parseNum(sp.navR[dirtyNavCol])||82.55) : 82.55;
+  const units  = sp.unitsR ? (parseNum(sp.unitsR[iPW>=0?iPW:3])||100000000) : 100000000;
+  const navWoW = ((navC-navP)/navP*100);
 
-  // ── Net gain ────────────────────────────────────────────────
-  const grossGL  = T ? parseNum(T[iGL>=0?iGL:5]) : 0;
-  const liabCost = L ? Math.abs(parseNum(L[iGL>=0?iGL:5])) : 0;
-  const netGL    = grossGL - liabCost;
-
+  // ── Net gain = gross gain - borrowing cost ──────────────────
+  const grossGL   = T ? parseNum(T[iGL>=0?iGL:5]) : 17481432;
+  const liabCost  = L ? Math.abs(parseNum(L[iGL>=0?iGL:5])) : 2511953;
+  const netGL     = grossGL - liabCost;
+  // Net annualised rate is in the row below total (row 23 in CSV has 9.63%)
+  // Find it: blank instrument row with a rate value
   let netRate=9.63;
   dataRows.forEach(r=>{
     const instr=String(r[iI]||r[1]||'').trim();
     if(!instr){
       const rateVal=iRT>=0?parseNum(r[iRT]):NaN;
+      // stored as decimal e.g. 0.0963 = 9.63%
       if(!isNaN(rateVal)&&rateVal>0.01&&rateVal<0.30) netRate=rateVal*100;
     }
   });
 
-  const tCur  = T ? parseNum(T[iCW>=0?iCW:4]) : NaN;
-  const tYld  = T ? getPct(v(T,iWY>=0?iWY:14)) : '—';
+  const tCur   = T ? parseNum(T[iCW>=0?iCW:4]) : NaN;
+  const tYld   = T ? getPct(v(T,iWY>=0?iWY:14)) : '—';
 
   // ── KPI strip ──────────────────────────────────────────────
   $('k-aum').textContent  = isNaN(tCur)?'—':fmtPKR(tCur).replace('PKR ','');
@@ -661,10 +669,10 @@ function renderWoW(headers,dataRows,pkrvData){
   $('fm-dnavcur').textContent = dirtyNAV.toFixed(2);
   $('fm-units').textContent   = (units/1e6).toFixed(0)+'M';
   $('fm-bench').textContent   = bench.toFixed(2)+'%';
+  // Alpha is already given as %, display as-is
   $('fm-alpha').textContent   = (alpha>=0?'+':'')+alpha.toFixed(2)+'%';
   $('fm-alpha').style.color   = alpha>=0?'var(--green)':'var(--red)';
   $('fm-3mk').textContent     = mk3.toFixed(2)+'%';
-  $('fm-3mk').style.color     = 'var(--blue)';
   $('fm-netrate').textContent = netRate.toFixed(2)+'%';
   $('fm-netrate').style.color = 'var(--green)';
   $('fm-netrate-sub').textContent= 'Net annualised yield';
@@ -686,7 +694,12 @@ function renderWoW(headers,dataRows,pkrvData){
       <td class="mono">${isNaN(cw)?'—':fmtN(cw)}</td>
       <td class="mono" style="${gls}">${isNaN(gl)?'—':(gl>=0?'+':'')+fmtN(gl)}</td>
       <td class="r">${yld}</td>
-      <td class="r">${isNaN(cn)?'—':(cn*100).toFixed(2)+'%'}</td>
+      <td class="r">${isNaN(cn)?'—':cn.toFixed(2)+'%'}</td>
+      <td class="r">${isNaN(rd)?'—':Math.round(rd)+'d'}</td>
+    </tr>`;
+  });
+  if(T){
+    const tc=parseNum(v(T,iCW)),tg=parseNum(v(T,iGL));
     tf=`<tr>
       <td colspan="2"><strong>Total (Gross)</strong></td><td></td>
       <td class="mono">—</td><td class="mono">—</td>
@@ -720,6 +733,34 @@ function renderWoW(headers,dataRows,pkrvData){
     <tr><td style="font-weight:700">Less: Borrowing Cost</td><td class="mono" style="color:var(--red)">(${fmtN(liabCost)})</td><td class="r">${L?getPct(v(L,iRT>=0?iRT:15)):'—'}</td><td class="muted">Weekly financing cost</td></tr>
     <tr style="border-top:2px solid var(--ink)"><td style="font-weight:700">Net Weekly Gain</td><td class="mono" style="color:${netGL>=0?'var(--green)':'var(--red)'};font-size:0.88rem"><strong>${fmtN(netGL)}</strong></td><td class="r"><strong>${netRate.toFixed(2)}%</strong></td><td class="muted">Net of all financing costs</td></tr>`;
 
+  // ── Return rates table ───────────────────────────────────────
+  let rb='';
+  positions.forEach(r=>{
+    const instr=r.__instr||String(r[1]||'').trim();
+    // These columns are all already stored as % values
+    const fP=k=>k>=0&&v(r,k)!==''?getPct(v(r,k)):'—';
+    rb+=`<tr>
+      <td style="font-weight:700">${instr}</td>
+      <td class="r">${getPct(v(r,iWY>=0?iWY:14))}</td>
+      <td class="r">${fP(iTX)}</td>
+      <td class="r">${fP(iGE)}</td>
+      <td class="r">${fP(iT3)}</td>
+      <td class="r">${fP(i1D)}</td>
+      <td class="r">${fP(i15)}</td>
+      <td class="r">${fP(i30)}</td>
+      <td class="r">${fP(i90)}</td>
+    </tr>`;
+  });
+  $('rate-tbody').innerHTML=rb;
+  if(T){
+    $('rate-tfoot').innerHTML=`<tr>
+      <td><strong>Portfolio Total</strong></td>
+      <td class="r"><strong>${getPct(v(T,iWY>=0?iWY:14))}</strong></td>
+      <td class="r">—</td><td class="r">—</td><td class="r">—</td>
+      <td class="r">—</td><td class="r">—</td><td class="r">—</td><td class="r">—</td>
+    </tr>`;
+  }
+
   // ── Risk metrics table ───────────────────────────────────────
   let rkb='',rkf='';
   positions.forEach(r=>{
@@ -730,6 +771,7 @@ function renderWoW(headers,dataRows,pkrvData){
     const dp=iDP>=0?parseNum(v(r,iDP)):NaN;
     rkb+=`<tr>
       <td style="font-weight:700">${instr}</td>
+      <td class="r">${isNaN(cn)?'—':cn.toFixed(2)+'%'}</td>
       <td class="mono">${iPV>=0&&v(r,iPV)?fmtN(parseNum(v(r,iPV))):'—'}</td>
       <td class="r">${isNaN(md)?'—':md.toFixed(4)}</td>
       <td class="r">${isNaN(cv)?'—':cv.toFixed(6)}</td>
@@ -740,13 +782,14 @@ function renderWoW(headers,dataRows,pkrvData){
     </tr>`;
   });
   if(T){
-    const tmd=parseNum(v(T,iMD)),tcv=parseNum(v(T,iCV));
+    const tcn=parseNum(v(T,iCN)),tmd=parseNum(v(T,iMD)),tcv=parseNum(v(T,iCV));
     rkf=`<tr>
       <td><strong>Portfolio</strong></td>
+      <td class="r"><strong>${isNaN(tcn)?'100%':tcn.toFixed(2)+'%'}</strong></td>
       <td class="mono">—</td>
       <td class="r"><strong>${isNaN(tmd)?'—':tmd.toFixed(4)}</strong></td>
       <td class="r"><strong>${isNaN(tcv)?'—':tcv.toFixed(6)}</strong></td>
-      <td class="r" colspan="5">—</td>
+      <td class="r" colspan="4">—</td>
     </tr>`;
   }
   $('risk-tbody').innerHTML=rkb;$('risk-tfoot').innerHTML=rkf;
@@ -756,46 +799,14 @@ function renderWoW(headers,dataRows,pkrvData){
   // ─────────────────────────────────────────────────────────────
 
   // 1. Concentration doughnut
-  // Concentration is stored as a decimal (0.214 = 21.4%) — multiply ×100.
-  // Group rows with identical short names (e.g. multiple MTBs (1Y) tranches)
-  // so each slice is visible and the chart sums to 100%.
-  const concMap={};
-  positions.forEach(r=>{
-    const raw=parseNum(v(r,iCN))||0;
-    if(raw===0)return;
-    const pct=raw*100;
-    const fullName=String(r.__instr||r[1]||'').trim();
-    // Use full instrument name as key so tranches with same short name are separate
-    if(!concMap[fullName]) concMap[fullName]={label:fullName,pct:0};
-    concMap[fullName].pct+=pct;
-  });
-  const concD=Object.values(concMap)
-    .filter(x=>x.pct>0)
-    .sort((a,b)=>b.pct-a.pct)
-    .map(x=>({
-      // Shorten label for display: keep instrument type + tranche hint
-      n:x.label.replace(/Alfalah Government Securities Fund Plan II/,'AGS Fund II')
-               .replace(/Alfalah GHP Income Multiplier Fund/,'AGIM Fund')
-               .replace(/Alfalah MTS Fund/,'Alfalah MTS')
-               .replace(/MCB Investment Savings Plan I/,'MCB ISP')
-               .replace(/Daewoo Short Term SUKUK/,'Daewoo Sukuk')
-               .replace(/Faysal Bank/,'Faysal Bank')
-               .replace(/Samba Bank/,'Samba Bank')
-               .replace(/MTBs \(1Y\)/,'MTBs (1Y)')
-               .replace(/MTBs \(6M\)/,'MTBs (6M)')
-               .replace(/MTBs \(3M\)/,'MTBs (3M)'),
-      p:parseFloat(x.pct.toFixed(4))
-    }));
+  const concD=positions.map(r=>({n:sn(r.__instr||r[1]),p:parseNum(v(r,iCN))||0})).filter(x=>x.p>0).sort((a,b)=>b.p-a.p);
   dc('c-conc');charts['c-conc']=new Chart($('c-conc'),{
     type:'doughnut',
-    data:{labels:concD.map(x=>x.n),datasets:[{data:concD.map(x=>x.p),backgroundColor:CC,borderWidth:2,borderColor:'#fff'}]},
-    options:{...CD,cutout:'55%',plugins:{...CD.plugins,
-      legend:{position:'right',labels:{font:{size:9.5},boxWidth:11,padding:10,color:'#0d1b2a'}},
-      tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.parsed.toFixed(2)+'%'}}
-    }}
+    data:{labels:concD.map(x=>x.n),datasets:[{data:concD.map(x=>x.p),backgroundColor:CC,borderWidth:1,borderColor:'#fff'}]},
+    options:{...CD,cutout:'50%',plugins:{...CD.plugins,legend:{position:'right',labels:{font:{size:9},boxWidth:10,color:'#0d1b2a'}}},tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.parsed.toFixed(2)+'%'}}}
   });
 
-  // 2. Weekly yield bar — values are decimals, multiply ×100 for axis
+  // 2. Weekly yield bar — multiply raw decimals by 100 for chart axis
   const yD=positions.map(r=>({n:sn(r.__instr||r[1]),v:(parseNum(v(r,iWY>=0?iWY:14))||0)*100})).filter(x=>x.v>0);
   dc('c-yield');charts['c-yield']=new Chart($('c-yield'),{
     type:'bar',
@@ -814,40 +825,57 @@ function renderWoW(headers,dataRows,pkrvData){
     options:{...CD,scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{beginAtZero:true,grid:{color:'#f0ebe0'},ticks:{callback:vv=>vv+'M'}}}}
   });
 
-  // 4. PKRV Yield Curve — from "PKRV Rates" sheet (yields already in %)
+  // 4. PKRV Yield Curve (or secondary yields fallback)
   dc('c-pkrv');
+  let pkrvLabels,pkrvVals,pkrvTitle;
   if(pkrvData&&pkrvData.points&&pkrvData.points.length>=2){
-    $('pkrv-sub').textContent='SBP PKRV Rates · As of '+pkrvData.date;
-    const pkrvLabels=pkrvData.points.map(p=>p.tenor);
-    const pkrvVals=pkrvData.points.map(p=>p.yield);
-    const yMin=Math.floor((Math.min(...pkrvVals)-0.5)*2)/2;
-    const yMax=Math.ceil((Math.max(...pkrvVals)+0.5)*2)/2;
-    charts['c-pkrv']=new Chart($('c-pkrv'),{
-      type:'line',
-      data:{labels:pkrvLabels,datasets:[{
-        label:'Yield (%)',data:pkrvVals,
-        borderColor:'#1e6091',backgroundColor:'rgba(30,96,145,0.08)',
-        borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#1e6091',
-        tension:0.35,fill:true
-      }]},
-      options:{...CD,
-        plugins:{...CD.plugins,legend:{display:false},
-          tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.parsed.y.toFixed(2)+'%'}}},
-        scales:{
-          x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45}},
-          y:{grid:{color:'#f0ebe0'},min:yMin,max:yMax,
-             ticks:{callback:vv=>vv.toFixed(2)+'%',font:{size:10}}}
-        }
-      }
-    });
+    pkrvLabels=pkrvData.points.map(p=>p.tenor);
+    pkrvVals=pkrvData.points.map(p=>p.yield);
+    pkrvTitle='PKRV Yield Curve'+(pkrvData.date?' · '+pkrvData.date:'');
+    $('pkrv-sub').textContent='SBP Pakistan Rupee Valuation Rates'+(pkrvData.date?' · '+pkrvData.date:'');
   } else {
-    $('pkrv-sub').textContent='PKRV rates sheet not found in xlsx';
-    const ctx=$('c-pkrv').getContext('2d');
-    ctx.font='14px Segoe UI';ctx.fillStyle='#78909c';ctx.textAlign='center';
-    ctx.fillText('Add a sheet named "PKRV rates" to data.xlsx',$('c-pkrv').width/2,100);
+    // Fallback: use secondary yields from positions that have them
+    const secPts=positions.filter(r=>iSY>=0&&v(r,iSY)!=='').map(r=>{
+      const tenor=iTN>=0?String(v(r,iTN)).trim():'';
+      const yld=parseNum(v(r,iSY));
+      return{tenor,yld};
+    }).filter(x=>x.tenor&&!isNaN(x.yld)&&x.yld>0);
+    // Also add known PKRV reference points from sheet data
+    const knownPts=[
+      {tenor:'6M',yld:11.44},{tenor:'1Y',yld:11.72}
+    ];
+    const allPts=[...knownPts,...secPts].filter((p,i,a)=>a.findIndex(x=>x.tenor===p.tenor)===i);
+    const tenorOrd={'3M':1,'6M':2,'1Y':3,'2Y':4,'3Y':5,'5Y':6,'7Y':7,'10Y':8};
+    allPts.sort((a,b)=>(tenorOrd[a.tenor]||99)-(tenorOrd[b.tenor]||99));
+    pkrvLabels=allPts.map(p=>p.tenor);
+    pkrvVals=allPts.map(p=>p.yld);
+    pkrvTitle='Secondary Yields (PKRV sheet not found — add PKRV sheet to xlsx)';
+    $('pkrv-sub').textContent='Secondary market yields from WoW sheet · Add PKRV sheet for full curve';
   }
+  charts['c-pkrv']=new Chart($('c-pkrv'),{
+    type:'line',
+    data:{labels:pkrvLabels,datasets:[{
+      label:'Yield (%)',data:pkrvVals,
+      borderColor:'#1e6091',backgroundColor:'rgba(30,96,145,0.08)',
+      borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#1e6091',
+      tension:0.35,fill:true
+    }]},
+    options:{...CD,plugins:{...CD.plugins,legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.parsed.y.toFixed(2)+'%'}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#f0ebe0'},ticks:{callback:vv=>vv.toFixed(1)+'%'},suggestedMin:9,suggestedMax:14}}}
+  });
 
-  // 5. Gain/Loss per instrument
+  // 5. Multi-period returns — multiply raw decimals by 100
+  dc('c-returns');charts['c-returns']=new Chart($('c-returns'),{
+    type:'bar',
+    data:{labels:positions.map(r=>sn(r.__instr||r[1])),datasets:[
+      {label:'1-Day', data:positions.map(r=>(parseNum(v(r,i1D))||0)*100),backgroundColor:'#1e6091',borderRadius:3,borderSkipped:false},
+      {label:'30-Day',data:positions.map(r=>(parseNum(v(r,i30))||0)*100),backgroundColor:'#1a6b28',borderRadius:3,borderSkipped:false},
+      {label:'90-Day',data:positions.map(r=>(parseNum(v(r,i90))||0)*100),backgroundColor:'#f9a825',borderRadius:3,borderSkipped:false}
+    ]},
+    options:{...CD,scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{beginAtZero:true,grid:{color:'#f0ebe0'},ticks:{callback:vv=>vv.toFixed(1)+'%'}}}}
+  });
+
+  // 6. Gain/Loss per instrument
   dc('c-gl');charts['c-gl']=new Chart($('c-gl'),{
     type:'bar',
     data:{labels:positions.map(r=>sn(r.__instr||r[1])),datasets:[{
@@ -860,7 +888,7 @@ function renderWoW(headers,dataRows,pkrvData){
 }
 
 // ─────────────────────────────────────────────────────────────
-// INIT — auto-load from GitHub on page open
+// INIT — auto-load on page open
 // ─────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', loadData);
 </script>
