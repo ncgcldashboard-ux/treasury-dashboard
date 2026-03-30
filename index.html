@@ -6,6 +6,9 @@
 <title>NCGCL Treasury Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --ink:#0d1b2a; --paper:#f5f0e8; --cream:#ede8dc;
@@ -13,9 +16,11 @@
   --green:#2b8c3a; --green2:#1a6b28;
   --blue:#1e6091; --amber:#e65100; --red:#b71c1c;
   --gold:#f9a825; --slate:#37474f;
+  --font-body:'Inter',system-ui,-apple-system,sans-serif;
+  --font-mono:'IBM Plex Mono','Courier New',monospace;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--paper);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;font-size:0.82rem;line-height:1.5;}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:0.82rem;line-height:1.5;-webkit-font-smoothing:antialiased;}
 .wrap{max-width:1280px;margin:0 auto;padding:clamp(14px,4vw,32px);}
 
 /* HEADER */
@@ -23,7 +28,7 @@ body{background:var(--paper);color:var(--ink);font-family:'Segoe UI',system-ui,s
 .header h1{font-size:clamp(1.1rem,3vw,1.65rem);font-weight:800;letter-spacing:-0.5px;color:var(--ink);}
 .header p{font-size:0.72rem;color:var(--muted);margin-top:2px;letter-spacing:0.3px;}
 .header-badge{background:var(--green);color:#fff;padding:6px 16px;border-radius:4px;font-weight:700;font-size:0.72rem;text-align:center;letter-spacing:0.5px;white-space:nowrap;}
-.header-badge span{display:block;font-size:1.1rem;font-weight:800;font-family:'Courier New',monospace;}
+.header-badge span{display:block;font-size:1.1rem;font-weight:800;font-family:var(--font-mono);}
 
 /* DATA BAR */
 .data-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:10px 16px;margin-bottom:20px;font-size:0.72rem;color:var(--muted);}
@@ -40,14 +45,14 @@ body{background:var(--paper);color:var(--ink);font-family:'Segoe UI',system-ui,s
 /* KPI STRIP */
 .kpi-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:14px 18px;margin-bottom:20px;}
 .kpi{text-align:center;}
-.kpi-val{font-size:clamp(1rem,2.2vw,1.7rem);font-weight:800;color:var(--green);letter-spacing:-0.5px;font-family:'Courier New',monospace;}
+.kpi-val{font-size:clamp(1rem,2.2vw,1.7rem);font-weight:800;color:var(--green);letter-spacing:-0.5px;font-family:var(--font-mono);}
 .kpi-val.blue{color:var(--blue);}.kpi-val.amber{color:var(--amber);}.kpi-val.slate{color:var(--slate);}.kpi-val.red{color:var(--red);}
 .kpi-label{font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:600;margin-top:2px;}
 .kpi-sub{font-size:0.58rem;color:var(--border);margin-top:1px;}
 
 /* TABS */
 .tabs{display:flex;gap:6px;border-bottom:2px solid var(--border);margin-bottom:20px;overflow-x:auto;padding-bottom:2px;}
-.tab-btn{background:none;border:none;padding:8px 16px;font-family:inherit;font-size:0.78rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .15s;}
+.tab-btn{background:none;border:none;padding:8px 16px;font-family:var(--font-body);font-size:0.78rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .15s;}
 .tab-btn:hover{color:var(--ink);}
 .tab-btn.active{color:var(--green);border-bottom-color:var(--green);}
 .tab-panel{display:none;}.tab-panel.active{display:block;}
@@ -65,7 +70,7 @@ body{background:var(--paper);color:var(--ink);font-family:'Segoe UI',system-ui,s
 /* INSIGHTS */
 .insights{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
 .insight{background:var(--cream);border-left:4px solid var(--green);border-radius:4px;padding:14px 16px;}
-.insight-n{font-size:1.3rem;font-weight:800;color:var(--green);font-family:'Courier New',monospace;}
+.insight-n{font-size:1.3rem;font-weight:800;color:var(--green);font-family:var(--font-mono);}
 .insight-d{font-size:0.72rem;color:var(--ink);margin-top:3px;line-height:1.4;}
 .insight.amber{border-left-color:var(--amber);}.insight.amber .insight-n{color:var(--amber);}
 .insight.blue{border-left-color:var(--blue);}.insight.blue .insight-n{color:var(--blue);}
@@ -82,12 +87,12 @@ thead th.r{text-align:right;}
 tbody tr{border-bottom:1px solid var(--cream);}
 tbody tr:hover{background:var(--cream);}
 tbody td{padding:8px 12px;font-size:0.78rem;vertical-align:middle;}
-tbody td.mono{font-family:'Courier New',monospace;font-weight:700;text-align:right;}
+tbody td.mono{font-family:var(--font-mono);font-weight:700;text-align:right;}
 tbody td.r{text-align:right;}
 tbody td.muted{color:var(--muted);font-size:0.72rem;}
 tfoot tr{border-top:2px solid var(--ink);}
 tfoot td{padding:9px 12px;font-size:0.78rem;font-weight:700;background:var(--cream);}
-tfoot td.mono{font-family:'Courier New',monospace;text-align:right;}
+tfoot td.mono{font-family:var(--font-mono);text-align:right;}
 
 /* PILLS */
 .pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.62rem;font-weight:700;letter-spacing:0.4px;white-space:nowrap;}
@@ -100,7 +105,7 @@ tfoot td.mono{font-family:'Courier New',monospace;text-align:right;}
 /* BENCHMARK */
 .bench-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
 .bench-card{background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:14px 16px;text-align:center;}
-.bench-val{font-size:1.4rem;font-weight:800;font-family:'Courier New',monospace;margin:4px 0 2px;}
+.bench-val{font-size:1.4rem;font-weight:800;font-family:var(--font-mono);margin:4px 0 2px;}
 .bench-label{font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:600;}
 .bench-sub{font-size:0.62rem;color:var(--muted);margin-top:2px;}
 
@@ -241,21 +246,21 @@ tfoot td.mono{font-family:'Courier New',monospace;text-align:right;}
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
     <div class="card" style="text-align:center;margin-bottom:0;">
       <div class="card-sub" style="margin-bottom:8px;">Clean NAV — Past Week</div>
-      <div style="font-size:1.8rem;font-weight:800;font-family:'Courier New',monospace;color:var(--slate)" id="fm-navprev">—</div>
+      <div style="font-size:1.8rem;font-weight:800;font-family:var(--font-mono);color:var(--slate)" id="fm-navprev">—</div>
     </div>
     <div class="card" style="text-align:center;border-top:3px solid var(--green);margin-bottom:0;">
       <div class="card-sub" style="margin-bottom:8px;">Clean NAV — Current</div>
-      <div style="font-size:1.8rem;font-weight:800;font-family:'Courier New',monospace;color:var(--green)" id="fm-navcur">—</div>
+      <div style="font-size:1.8rem;font-weight:800;font-family:var(--font-mono);color:var(--green)" id="fm-navcur">—</div>
       <div style="font-size:0.72rem;margin-top:4px;" id="fm-navwow">—</div>
     </div>
     <div class="card" style="text-align:center;border-top:3px solid var(--amber);margin-bottom:0;">
       <div class="card-sub" style="margin-bottom:8px;">Dirty NAV — Current</div>
-      <div style="font-size:1.8rem;font-weight:800;font-family:'Courier New',monospace;color:var(--amber)" id="fm-dnavcur">—</div>
+      <div style="font-size:1.8rem;font-weight:800;font-family:var(--font-mono);color:var(--amber)" id="fm-dnavcur">—</div>
       <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;">Incl. accrued income</div>
     </div>
     <div class="card" style="text-align:center;margin-bottom:0;">
       <div class="card-sub" style="margin-bottom:8px;">NAV Units Outstanding</div>
-      <div style="font-size:1.8rem;font-weight:800;font-family:'Courier New',monospace;color:var(--blue)" id="fm-units">—</div>
+      <div style="font-size:1.8rem;font-weight:800;font-family:var(--font-mono);color:var(--blue)" id="fm-units">—</div>
     </div>
   </div>
 
@@ -575,21 +580,11 @@ function renderWoW(headers,dataRows,pkrvData){
   // ── Special values ──────────────────────────────────────────
   const T=sp.T,L=sp.L;
 
-  // Benchmark and Alpha are stored as decimals in the sheet (e.g. 0.1043 = 10.43%)
+  // Benchmark, Alpha, 3MK — all stored as decimals (e.g. 0.1043 = 10.43%)
   // Multiply ×100 to convert to display percentage
-  const bench =sp.bench!=null ? sp.bench*100 : 10.43;
-  const alpha =sp.alpha!=null ? sp.alpha*100 : -0.09;
-
-  // ── 3M KIBOR ────────────────────────────────────────────────
-  // The sheet stores 3MK as a decimal (e.g. 0.1143).
-  // Divide by 100 gives the annualised rate as a display % correctly
-  // i.e. 0.1143 / 100 * 100 = 0.1143% would be wrong;
-  // the correct display is 0.1143 * 100 = 11.43% BUT user has confirmed
-  // the value should be divided by 100 at the raw read stage,
-  // so we store mk3 = sp.mk / 100 and then display ×100 → same as sp.mk as-is.
-  // Net effect: display sp.mk directly as a percentage (0.1143 → "11.43%")
-  // without the extra ×100 multiplication that was previously applied.
-  const mk3 = sp.mk != null ? sp.mk / 100 : 0.001143;
+  const bench = sp.bench != null ? sp.bench * 100 : 10.43;
+  const alpha = sp.alpha != null ? sp.alpha * 100 : -0.09;
+  const mk3   = sp.mk   != null ? sp.mk   * 100 : 11.43;
 
   // NAV rows
   const navP  = sp.navR ? (parseNum(sp.navR[iPW>=0?iPW:3])||82.75) : 82.75;
@@ -636,10 +631,9 @@ function renderWoW(headers,dataRows,pkrvData){
   $('ov-netgl').parentElement.querySelector('.insight-n').style.color=netGL>=0?'var(--amber)':'var(--red)';
   $('ov-liab-cost').textContent= fmtPKR(liabCost);
   $('ov-grossgl').textContent = fmtPKR(grossGL);
-  $('ov-alpha').textContent   = (alpha>=0?'+':'')+alpha.toFixed(4)+'%';
+  $('ov-alpha').textContent   = (alpha>=0?'+':'')+alpha.toFixed(2)+'%';
   $('ov-bench').textContent   = bench.toFixed(2)+'%';
-  // 3M KIBOR: mk3 is already divided by 100, so multiply ×100 to display as %
-  $('ov-3mk').textContent     = (mk3*100).toFixed(4)+'%';
+  $('ov-3mk').textContent     = mk3.toFixed(2)+'%';
 
   // ── Fund Metrics tab ────────────────────────────────────────
   $('fm-navprev').textContent = navP.toFixed(2);
@@ -649,10 +643,9 @@ function renderWoW(headers,dataRows,pkrvData){
   $('fm-dnavcur').textContent = dirtyNAV.toFixed(2);
   $('fm-units').textContent   = (units/1e6).toFixed(0)+'M';
   $('fm-bench').textContent   = bench.toFixed(2)+'%';
-  $('fm-alpha').textContent   = (alpha>=0?'+':'')+alpha.toFixed(4)+'%';
+  $('fm-alpha').textContent   = (alpha>=0?'+':'')+alpha.toFixed(2)+'%';
   $('fm-alpha').style.color   = alpha>=0?'var(--green)':'var(--red)';
-  // 3M KIBOR display: mk3 ×100 restores the original decimal value as a readable %
-  $('fm-3mk').textContent     = (mk3*100).toFixed(4)+'%';
+  $('fm-3mk').textContent     = mk3.toFixed(2)+'%';
   $('fm-3mk').style.color     = 'var(--blue)';
   $('fm-netrate').textContent = netRate.toFixed(2)+'%';
   $('fm-netrate').style.color = 'var(--green)';
