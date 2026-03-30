@@ -745,11 +745,43 @@ function renderWoW(headers,dataRows,pkrvData){
   // ─────────────────────────────────────────────────────────────
 
   // 1. Concentration doughnut
-  const concD=positions.map(r=>({n:sn(r.__instr||r[1]),p:parseNum(v(r,iCN))||0})).filter(x=>x.p>0).sort((a,b)=>b.p-a.p);
+  // Concentration is stored as a decimal (0.214 = 21.4%) — multiply ×100.
+  // Group rows with identical short names (e.g. multiple MTBs (1Y) tranches)
+  // so each slice is visible and the chart sums to 100%.
+  const concMap={};
+  positions.forEach(r=>{
+    const raw=parseNum(v(r,iCN))||0;
+    if(raw===0)return;
+    const pct=raw*100;
+    const fullName=String(r.__instr||r[1]||'').trim();
+    // Use full instrument name as key so tranches with same short name are separate
+    if(!concMap[fullName]) concMap[fullName]={label:fullName,pct:0};
+    concMap[fullName].pct+=pct;
+  });
+  const concD=Object.values(concMap)
+    .filter(x=>x.pct>0)
+    .sort((a,b)=>b.pct-a.pct)
+    .map(x=>({
+      // Shorten label for display: keep instrument type + tranche hint
+      n:x.label.replace(/Alfalah Government Securities Fund Plan II/,'AGS Fund II')
+               .replace(/Alfalah GHP Income Multiplier Fund/,'AGIM Fund')
+               .replace(/Alfalah MTS Fund/,'Alfalah MTS')
+               .replace(/MCB Investment Savings Plan I/,'MCB ISP')
+               .replace(/Daewoo Short Term SUKUK/,'Daewoo Sukuk')
+               .replace(/Faysal Bank/,'Faysal Bank')
+               .replace(/Samba Bank/,'Samba Bank')
+               .replace(/MTBs \(1Y\)/,'MTBs (1Y)')
+               .replace(/MTBs \(6M\)/,'MTBs (6M)')
+               .replace(/MTBs \(3M\)/,'MTBs (3M)'),
+      p:parseFloat(x.pct.toFixed(4))
+    }));
   dc('c-conc');charts['c-conc']=new Chart($('c-conc'),{
     type:'doughnut',
-    data:{labels:concD.map(x=>x.n),datasets:[{data:concD.map(x=>x.p),backgroundColor:CC,borderWidth:1,borderColor:'#fff'}]},
-    options:{...CD,cutout:'50%',plugins:{...CD.plugins,legend:{position:'right',labels:{font:{size:9},boxWidth:10,color:'#0d1b2a'}}},tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.parsed.toFixed(2)+'%'}}}
+    data:{labels:concD.map(x=>x.n),datasets:[{data:concD.map(x=>x.p),backgroundColor:CC,borderWidth:2,borderColor:'#fff'}]},
+    options:{...CD,cutout:'55%',plugins:{...CD.plugins,
+      legend:{position:'right',labels:{font:{size:9.5},boxWidth:11,padding:10,color:'#0d1b2a'}},
+      tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.parsed.toFixed(2)+'%'}}
+    }}
   });
 
   // 2. Weekly yield bar — values are decimals, multiply ×100 for axis
