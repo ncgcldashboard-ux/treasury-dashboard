@@ -142,7 +142,12 @@ tfoot td.mono{font-family:var(--font-mono);text-align:right;}
     <div class="data-item">Last refreshed: <strong id="lastRefreshed">—</strong></div>
   </div>
   <div>
-    <button onclick="loadData()" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:5px 14px;font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;">↻ Refresh</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <label style="background:var(--blue);color:#fff;border:none;border-radius:4px;padding:5px 14px;font-family:var(--font-body);font-size:0.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">
+        ↑ Upload xlsx<input type="file" accept=".xlsx" onchange="loadLocalFile(this)" style="display:none;">
+      </label>
+      <button onclick="loadData()" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:5px 14px;font-family:var(--font-body);font-size:0.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">↻ GitHub</button>
+    </div>
   </div>
 </div>
 
@@ -843,8 +848,33 @@ function renderWoW(headers,dataRows,pkrvData){
 }
 
 // ─────────────────────────────────────────────────────────────
-// INIT — auto-load on page open
+// LOCAL FILE UPLOAD — reads directly from user's machine
 // ─────────────────────────────────────────────────────────────
+function loadLocalFile(input){
+  const file=input.files[0];
+  if(!file)return;
+  setStatus('Reading '+file.name+'…','loading');
+  const now=new Date();
+  $('lastRefreshed').textContent=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
+  $('fileDate').textContent=new Date(file.lastModified).toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
+  $('footerFile').textContent=file.name;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      processWorkbook(wb);
+      setStatus('Loaded: '+file.name+' · '+wb.SheetNames.length+' sheet(s)','ok');
+      const ts=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
+      $('asOfDate').textContent=ts;$('footerDate').textContent=ts;
+    }catch(err){
+      setStatus('Error reading file: '+err.message,'err');
+    }
+  };
+  reader.onerror=()=>setStatus('Failed to read file','err');
+  reader.readAsArrayBuffer(file);
+  // Reset input so same file can be re-uploaded
+  input.value='';
+}
 window.addEventListener('DOMContentLoaded', loadData);
 </script>
 </body>
