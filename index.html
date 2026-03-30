@@ -142,12 +142,7 @@ tfoot td.mono{font-family:var(--font-mono);text-align:right;}
     <div class="data-item">Last refreshed: <strong id="lastRefreshed">—</strong></div>
   </div>
   <div>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <label style="background:var(--blue);color:#fff;border:none;border-radius:4px;padding:5px 14px;font-family:var(--font-body);font-size:0.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">
-        ↑ Upload xlsx<input type="file" accept=".xlsx" onchange="loadLocalFile(this)" style="display:none;">
-      </label>
-      <button onclick="loadData()" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:5px 14px;font-family:var(--font-body);font-size:0.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">↻ GitHub</button>
-    </div>
+    <button onclick="loadData()" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:5px 14px;font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;">↻ Refresh</button>
   </div>
 </div>
 
@@ -297,7 +292,7 @@ tfoot td.mono{font-family:var(--font-mono);text-align:right;}
   <div class="tbl-wrap">
     <table>
       <thead><tr>
-        <th>Instrument</th><th class="r">PVBP</th>
+        <th>Instrument</th><th class="r">Concentration</th><th class="r">PVBP</th>
         <th class="r">Mod. Duration</th><th class="r">Convexity</th><th class="r">Tenor</th>
         <th class="r">Secondary Yield</th><th class="r">Dirty Price</th><th class="r">Rem. Days</th>
       </tr></thead>
@@ -673,7 +668,12 @@ function renderWoW(headers,dataRows,pkrvData){
       <td class="mono">${isNaN(cw)?'—':fmtN(cw)}</td>
       <td class="mono" style="${gls}">${isNaN(gl)?'—':(gl>=0?'+':'')+fmtN(gl)}</td>
       <td class="r">${yld}</td>
-      <td class="r">${isNaN(cn)?'—':(cn*100).toFixed(2)+'%'}</td>
+      <td class="r">${isNaN(cn)?'—':cn.toFixed(2)+'%'}</td>
+      <td class="r">${isNaN(rd)?'—':Math.round(rd)+'d'}</td>
+    </tr>`;
+  });
+  if(T){
+    const tc=parseNum(v(T,iCW)),tg=parseNum(v(T,iGL));
     tf=`<tr>
       <td colspan="2"><strong>Total (Gross)</strong></td><td></td>
       <td class="mono">—</td><td class="mono">—</td>
@@ -717,6 +717,7 @@ function renderWoW(headers,dataRows,pkrvData){
     const dp=iDP>=0?parseNum(v(r,iDP)):NaN;
     rkb+=`<tr>
       <td style="font-weight:700">${instr}</td>
+      <td class="r">${isNaN(cn)?'—':cn.toFixed(2)+'%'}</td>
       <td class="mono">${iPV>=0&&v(r,iPV)?fmtN(parseNum(v(r,iPV))):'—'}</td>
       <td class="r">${isNaN(md)?'—':md.toFixed(4)}</td>
       <td class="r">${isNaN(cv)?'—':cv.toFixed(6)}</td>
@@ -727,13 +728,14 @@ function renderWoW(headers,dataRows,pkrvData){
     </tr>`;
   });
   if(T){
-    const tmd=parseNum(v(T,iMD)),tcv=parseNum(v(T,iCV));
+    const tcn=parseNum(v(T,iCN)),tmd=parseNum(v(T,iMD)),tcv=parseNum(v(T,iCV));
     rkf=`<tr>
       <td><strong>Portfolio</strong></td>
+      <td class="r"><strong>${isNaN(tcn)?'100%':tcn.toFixed(2)+'%'}</strong></td>
       <td class="mono">—</td>
       <td class="r"><strong>${isNaN(tmd)?'—':tmd.toFixed(4)}</strong></td>
       <td class="r"><strong>${isNaN(tcv)?'—':tcv.toFixed(6)}</strong></td>
-      <td class="r" colspan="5">—</td>
+      <td class="r" colspan="4">—</td>
     </tr>`;
   }
   $('risk-tbody').innerHTML=rkb;$('risk-tfoot').innerHTML=rkf;
@@ -743,43 +745,11 @@ function renderWoW(headers,dataRows,pkrvData){
   // ─────────────────────────────────────────────────────────────
 
   // 1. Concentration doughnut
-  // Concentration is stored as a decimal (0.214 = 21.4%) — multiply ×100.
-  // Group rows with identical short names (e.g. multiple MTBs (1Y) tranches)
-  // so each slice is visible and the chart sums to 100%.
-  const concMap={};
-  positions.forEach(r=>{
-    const raw=parseNum(v(r,iCN))||0;
-    if(raw===0)return;
-    const pct=raw*100;
-    const fullName=String(r.__instr||r[1]||'').trim();
-    // Use full instrument name as key so tranches with same short name are separate
-    if(!concMap[fullName]) concMap[fullName]={label:fullName,pct:0};
-    concMap[fullName].pct+=pct;
-  });
-  const concD=Object.values(concMap)
-    .filter(x=>x.pct>0)
-    .sort((a,b)=>b.pct-a.pct)
-    .map(x=>({
-      // Shorten label for display: keep instrument type + tranche hint
-      n:x.label.replace(/Alfalah Government Securities Fund Plan II/,'AGS Fund II')
-               .replace(/Alfalah GHP Income Multiplier Fund/,'AGIM Fund')
-               .replace(/Alfalah MTS Fund/,'Alfalah MTS')
-               .replace(/MCB Investment Savings Plan I/,'MCB ISP')
-               .replace(/Daewoo Short Term SUKUK/,'Daewoo Sukuk')
-               .replace(/Faysal Bank/,'Faysal Bank')
-               .replace(/Samba Bank/,'Samba Bank')
-               .replace(/MTBs \(1Y\)/,'MTBs (1Y)')
-               .replace(/MTBs \(6M\)/,'MTBs (6M)')
-               .replace(/MTBs \(3M\)/,'MTBs (3M)'),
-      p:parseFloat(x.pct.toFixed(4))
-    }));
+  const concD=positions.map(r=>({n:sn(r.__instr||r[1]),p:parseNum(v(r,iCN))||0})).filter(x=>x.p>0).sort((a,b)=>b.p-a.p);
   dc('c-conc');charts['c-conc']=new Chart($('c-conc'),{
     type:'doughnut',
-    data:{labels:concD.map(x=>x.n),datasets:[{data:concD.map(x=>x.p),backgroundColor:CC,borderWidth:2,borderColor:'#fff'}]},
-    options:{...CD,cutout:'55%',plugins:{...CD.plugins,
-      legend:{position:'right',labels:{font:{size:9.5},boxWidth:11,padding:10,color:'#0d1b2a'}},
-      tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.parsed.toFixed(2)+'%'}}
-    }}
+    data:{labels:concD.map(x=>x.n),datasets:[{data:concD.map(x=>x.p),backgroundColor:CC,borderWidth:1,borderColor:'#fff'}]},
+    options:{...CD,cutout:'50%',plugins:{...CD.plugins,legend:{position:'right',labels:{font:{size:9},boxWidth:10,color:'#0d1b2a'}}},tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.parsed.toFixed(2)+'%'}}}
   });
 
   // 2. Weekly yield bar — values are decimals, multiply ×100 for axis
@@ -804,7 +774,7 @@ function renderWoW(headers,dataRows,pkrvData){
   // 4. PKRV Yield Curve — from "PKRV Rates" sheet (yields already in %)
   dc('c-pkrv');
   if(pkrvData&&pkrvData.points&&pkrvData.points.length>=2){
-    $('pkrv-sub').textContent='SBP PKRV Rates · As of '+pkrvData.date;
+    $('pkrv-sub').textContent='SBP PKRV Rates;
     const pkrvLabels=pkrvData.points.map(p=>p.tenor);
     const pkrvVals=pkrvData.points.map(p=>p.yield);
     const yMin=Math.floor((Math.min(...pkrvVals)-0.5)*2)/2;
@@ -847,36 +817,9 @@ function renderWoW(headers,dataRows,pkrvData){
 }
 
 // ─────────────────────────────────────────────────────────────
-// LOCAL FILE UPLOAD — reads directly from user's machine
+// INIT — auto-load on page open
 // ─────────────────────────────────────────────────────────────
-function loadLocalFile(input){
-  const file=input.files[0];
-  if(!file)return;
-  setStatus('Reading '+file.name+'…','loading');
-  const now=new Date();
-  $('lastRefreshed').textContent=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
-  $('fileDate').textContent=new Date(file.lastModified).toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
-  $('footerFile').textContent=file.name;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    try{
-      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
-      processWorkbook(wb);
-      setStatus('Loaded: '+file.name+' · '+wb.SheetNames.length+' sheet(s)','ok');
-      const ts=now.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});
-      $('asOfDate').textContent=ts;$('footerDate').textContent=ts;
-    }catch(err){
-      setStatus('Error reading file: '+err.message,'err');
-    }
-    // Reset AFTER read is complete so same file can be re-uploaded
-    input.value='';
-  };
-  reader.onerror=()=>{ setStatus('Failed to read file','err'); input.value=''; };
-  reader.readAsArrayBuffer(file);
-}
-window.addEventListener('DOMContentLoaded',()=>{
-  setStatus('Ready — upload an xlsx file or click ↻ GitHub','');
-});
+window.addEventListener('DOMContentLoaded', loadData);
 </script>
 </body>
 </html>
